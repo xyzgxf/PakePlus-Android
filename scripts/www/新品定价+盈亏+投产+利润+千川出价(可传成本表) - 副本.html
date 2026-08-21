@@ -1,0 +1,3918 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>新品定价 · 批量计算 + 盈亏 + 黄金投产 + 爆款利润 + 千川出价</title>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js">
+    </script>
+    <style>
+        /* ===== 全局重置 & 基础 ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: linear-gradient(145deg, #f0f4ff 0%, #e6edfa 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 30px 20px 80px 20px;
+            position: relative;
+        }
+
+        .calculator {
+            max-width: 1320px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 32px;
+            padding: 32px 30px 36px;
+            box-shadow: 0 20px 60px rgba(50, 80, 150, 0.15), 0 8px 24px rgba(50, 80, 150, 0.06),
+                inset 0 1px 0 rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            transition: all 0.3s ease;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 4px;
+            flex-wrap: wrap;
+        }
+        .header-icon {
+            font-size: 32px;
+            line-height: 1;
+        }
+        .header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #0b1a33;
+            letter-spacing: -0.3px;
+        }
+        .header-actions {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: #4a5c7a;
+            margin-bottom: 16px;
+            padding-left: 46px;
+            line-height: 1.5;
+            font-weight: 400;
+            border-left: 3px solid #4f7df3;
+            padding-left: 16px;
+        }
+        .subtitle .highlight {
+            color: #4f7df3;
+            font-weight: 500;
+        }
+        .subtitle .new-tag {
+            display: inline-block;
+            background: #10b981;
+            color: #fff;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 0 10px;
+            border-radius: 20px;
+            margin-left: 4px;
+        }
+
+        .toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 16px 24px;
+            background: #f0f6fe;
+            border-radius: 16px;
+            padding: 14px 20px;
+            margin-bottom: 18px;
+            border: 1px solid rgba(79, 125, 243, 0.12);
+        }
+        .toolbar-section {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .toolbar-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1e2f4a;
+            white-space: nowrap;
+        }
+
+        .upload-wrap {
+            position: relative;
+            display: inline-block;
+        }
+        .upload-wrap input[type="file"] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+        .btn-upload {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 16px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #4f7df3;
+            background: rgba(79, 125, 243, 0.08);
+            border: 2px dashed #b7cdf0;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            font-family: inherit;
+            white-space: nowrap;
+        }
+        .btn-upload:hover {
+            background: rgba(79, 125, 243, 0.14);
+            border-color: #4f7df3;
+        }
+        .upload-status {
+            font-size: 13px;
+            color: #4a5c7a;
+            font-weight: 500;
+        }
+        .upload-status .count {
+            font-weight: 700;
+            color: #0b1a33;
+        }
+
+        .sku-search-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            position: relative;
+        }
+        .sku-search-wrap .sku-input {
+            padding: 6px 14px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #0b1a33;
+            background: #f7faff;
+            border: 2px solid #e2eaf9;
+            border-radius: 30px;
+            outline: none;
+            transition: all 0.25s ease;
+            font-family: inherit;
+            width: 200px;
+            min-width: 140px;
+        }
+        .sku-search-wrap .sku-input:focus {
+            border-color: #4f7df3;
+            background: #ffffff;
+            box-shadow: 0 0 0 3px rgba(79, 125, 243, 0.10);
+        }
+        .sku-search-wrap .sku-input::placeholder {
+            color: #a8b9d4;
+            font-weight: 400;
+        }
+        .sku-match-result {
+            font-size: 13px;
+            font-weight: 500;
+            color: #4a5c7a;
+            min-width: 60px;
+        }
+        .sku-match-result .matched {
+            color: #059669;
+            font-weight: 700;
+        }
+        .sku-match-result .not-found {
+            color: #dc2626;
+            font-weight: 600;
+        }
+        .sku-match-result .hint {
+            color: #9aaec9;
+            font-size: 12px;
+        }
+        .btn-sku-fill {
+            padding: 6px 16px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #ffffff;
+            background: #4f7df3;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            font-family: inherit;
+            white-space: nowrap;
+        }
+        .btn-sku-fill:hover {
+            background: #3b66d9;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(79, 125, 243, 0.25);
+        }
+        .btn-sku-fill:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* ===== 主表 ===== */
+        .table-wrap {
+            overflow-x: auto;
+            border-radius: 18px;
+            border: 1px solid rgba(79, 125, 243, 0.10);
+            background: #f8fbff;
+            padding: 4px 2px 2px 2px;
+            margin-top: 4px;
+        }
+        .table-wrap table {
+            width: 100%;
+            min-width: 1180px;
+            border-collapse: collapse;
+            font-size: 14px;
+            border-spacing: 0;
+        }
+        .table-wrap thead th {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: #e8effa;
+            color: #1e2f4a;
+            font-weight: 600;
+            font-size: 12px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            padding: 12px 8px;
+            text-align: center;
+            border-bottom: 2px solid #d5e0ee;
+            white-space: nowrap;
+        }
+        .table-wrap thead th:first-child {
+            border-radius: 0;
+            padding-left: 12px;
+        }
+        .table-wrap thead th:last-child {
+            border-radius: 0;
+            padding-right: 12px;
+        }
+        .table-wrap thead th .th-inner {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+        }
+        .table-wrap thead th .th-inner small {
+            font-weight: 400;
+            font-size: 10px;
+            color: #6b7f9e;
+            text-transform: none;
+            letter-spacing: 0;
+        }
+        .table-wrap thead th .th-inner .mode-tag {
+            font-size: 9px;
+            font-weight: 400;
+            color: #6b7f9e;
+            background: rgba(79, 125, 243, 0.08);
+            padding: 0 8px;
+            border-radius: 10px;
+            text-transform: none;
+        }
+        .table-wrap thead th .th-inner .new-tag-th {
+            font-size: 8px;
+            font-weight: 700;
+            color: #10b981;
+            background: rgba(16, 185, 129, 0.12);
+            padding: 0 6px;
+            border-radius: 10px;
+            text-transform: none;
+        }
+
+        .table-wrap tbody tr {
+            transition: background 0.15s ease;
+            border-bottom: 1px solid #e9eff6;
+            cursor: pointer;
+        }
+        .table-wrap tbody tr:last-child {
+            border-bottom: none;
+        }
+        .table-wrap tbody tr:hover {
+            background: rgba(79, 125, 243, 0.04);
+        }
+        .table-wrap tbody tr.selected {
+            background: rgba(79, 125, 243, 0.10);
+            outline: 2px solid #4f7df3;
+            outline-offset: -1px;
+            border-radius: 4px;
+        }
+        .table-wrap tbody td {
+            padding: 10px 8px;
+            text-align: center;
+            vertical-align: middle;
+            font-size: 14px;
+            color: #0b1a33;
+        }
+
+        .table-wrap tbody td .input-field {
+            width: 100%;
+            min-width: 60px;
+            padding: 6px 6px 6px 22px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #0b1a33;
+            background: #f7faff;
+            border: 2px solid #e2eaf9;
+            border-radius: 10px;
+            outline: none;
+            transition: all 0.2s ease;
+            font-family: inherit;
+            text-align: center;
+        }
+        .table-wrap tbody td .input-field:focus {
+            border-color: #4f7df3;
+            background: #ffffff;
+            box-shadow: 0 0 0 3px rgba(79, 125, 243, 0.10);
+        }
+        .table-wrap tbody td .input-field::-webkit-outer-spin-button,
+        .table-wrap tbody td .input-field::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        .table-wrap tbody td .input-field[type="number"] {
+            -moz-appearance: textfield;
+        }
+        .table-wrap tbody td .input-field.profit-input {
+            border-color: #f0d6b0;
+            background: #fffbf5;
+        }
+        .table-wrap tbody td .input-field.profit-input:focus {
+            border-color: #e8a84c;
+            box-shadow: 0 0 0 3px rgba(232, 168, 76, 0.12);
+        }
+        .table-wrap tbody td .input-field.base-price-input {
+            border-color: #c5d6f0;
+            background: #f5f9ff;
+            font-weight: 700;
+            color: #1a2f52;
+        }
+        .table-wrap tbody td .input-field.base-price-input:focus {
+            border-color: #4f7df3;
+            background: #ffffff;
+            box-shadow: 0 0 0 3px rgba(79, 125, 243, 0.10);
+        }
+        .table-wrap tbody td .input-field.base-price-input.manual-mode {
+            border-color: #f59e0b;
+            background: #fffbeb;
+            box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.10);
+        }
+        .table-wrap tbody td .input-field.base-price-input.manual-mode:focus {
+            border-color: #f59e0b;
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+        }
+        /* 目标折后价输入框样式 */
+        .table-wrap tbody td .input-field.target-price-input {
+            border-color: #a8c8f0;
+            background: #f2f8ff;
+            font-weight: 700;
+            color: #1a3a6a;
+        }
+        .table-wrap tbody td .input-field.target-price-input:focus {
+            border-color: #4f7df3;
+            background: #ffffff;
+            box-shadow: 0 0 0 3px rgba(79, 125, 243, 0.10);
+        }
+        .table-wrap tbody td .input-field.target-price-input.manual-mode {
+            border-color: #f59e0b;
+            background: #fffbeb;
+            box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.10);
+        }
+        .table-wrap tbody td .input-field.target-price-input.manual-mode:focus {
+            border-color: #f59e0b;
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+        }
+
+        .input-wrap {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+            max-width: 110px;
+        }
+        .input-wrap .sym {
+            position: absolute;
+            left: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 13px;
+            font-weight: 500;
+            color: #7a8daa;
+            pointer-events: none;
+        }
+        .input-wrap .input-field {
+            padding-left: 22px;
+            width: 100%;
+        }
+        .input-wrap .input-field.profit-input {
+            padding-left: 22px;
+        }
+
+        .manual-badge {
+            display: inline-block;
+            font-size: 9px;
+            font-weight: 600;
+            color: #f59e0b;
+            background: rgba(245, 158, 11, 0.12);
+            padding: 0 8px;
+            border-radius: 10px;
+            margin-left: 4px;
+            white-space: nowrap;
+            line-height: 18px;
+            vertical-align: middle;
+        }
+
+        .result-value {
+            font-weight: 600;
+            color: #0b1a33;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+        .result-value .currency {
+            font-weight: 400;
+            color: #6b7f9e;
+            font-size: 12px;
+            margin-right: 1px;
+        }
+        .result-value.double-price {
+            font-weight: 700;
+            color: #1a2f52;
+            font-size: 15px;
+        }
+        .result-value.discount-fold {
+            font-weight: 700;
+            color: #b8863a;
+            background: rgba(232, 168, 76, 0.08);
+            padding: 2px 10px;
+            border-radius: 20px;
+            display: inline-block;
+            font-size: 13px;
+        }
+        .result-value.break-even-roi {
+            font-weight: 700;
+            color: #0b6e4f;
+            background: rgba(16, 185, 129, 0.08);
+            padding: 2px 10px;
+            border-radius: 20px;
+            display: inline-block;
+            font-size: 13px;
+        }
+        .result-value.break-even-roi.invalid {
+            color: #9aaec9;
+            background: transparent;
+        }
+
+        .status-badge {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 12px;
+            border-radius: 30px;
+            white-space: nowrap;
+            letter-spacing: 0.2px;
+        }
+        .status-badge.down {
+            background: rgba(239, 68, 68, 0.12);
+            color: #dc2626;
+        }
+        .status-badge.up {
+            background: rgba(16, 185, 129, 0.12);
+            color: #059669;
+        }
+        .status-badge.equal {
+            background: rgba(79, 125, 243, 0.10);
+            color: #4f7df3;
+        }
+        .status-badge.error {
+            background: rgba(239, 68, 68, 0.08);
+            color: #9ca3af;
+        }
+
+        .btn-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 30px;
+            height: 30px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.2s ease;
+            background: transparent;
+            color: #9aaec9;
+        }
+        .btn-icon:hover {
+            background: rgba(239, 68, 68, 0.08);
+            color: #dc2626;
+        }
+        .btn-icon.del-row:hover {
+            background: rgba(239, 68, 68, 0.12);
+            color: #dc2626;
+            transform: scale(1.05);
+        }
+
+        .btn-profit {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4px 8px;
+            font-size: 10px;
+            font-weight: 600;
+            color: #ffffff;
+            background: #8b5cf6;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+            white-space: nowrap;
+            margin-right: 2px;
+        }
+        .btn-profit:hover {
+            background: #7c3aed;
+            transform: scale(1.03);
+        }
+        .btn-profit:active {
+            transform: scale(0.97);
+        }
+
+        .btn-golden {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4px 8px;
+            font-size: 10px;
+            font-weight: 600;
+            color: #ffffff;
+            background: #f59e0b;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+            white-space: nowrap;
+            margin-right: 2px;
+        }
+        .btn-golden:hover {
+            background: #d97706;
+            transform: scale(1.03);
+        }
+        .btn-golden:active {
+            transform: scale(0.97);
+        }
+
+        .btn-profit-calc {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4px 8px;
+            font-size: 10px;
+            font-weight: 600;
+            color: #ffffff;
+            background: #10b981;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+            white-space: nowrap;
+            margin-right: 2px;
+        }
+        .btn-profit-calc:hover {
+            background: #059669;
+            transform: scale(1.03);
+        }
+        .btn-profit-calc:active {
+            transform: scale(0.97);
+        }
+
+        .btn-qianchuan {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4px 8px;
+            font-size: 10px;
+            font-weight: 600;
+            color: #ffffff;
+            background: #ec4899;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+            white-space: nowrap;
+            margin-right: 2px;
+        }
+        .btn-qianchuan:hover {
+            background: #db2777;
+            transform: scale(1.03);
+        }
+        .btn-qianchuan:active {
+            transform: scale(0.97);
+        }
+
+        .add-row-area {
+            display: flex;
+            justify-content: center;
+            margin-top: 18px;
+        }
+        .btn-add {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 28px;
+            font-size: 15px;
+            font-weight: 600;
+            color: #4f7df3;
+            background: rgba(79, 125, 243, 0.08);
+            border: 2px dashed #c5d6f0;
+            border-radius: 40px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            font-family: inherit;
+        }
+        .btn-add:hover {
+            background: rgba(79, 125, 243, 0.14);
+            border-color: #4f7df3;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(79, 125, 243, 0.08);
+        }
+        .btn-add:active {
+            transform: scale(0.97);
+        }
+
+        /* ===== 面板通用 ===== */
+        .panel-container {
+            display: none;
+            margin-top: 28px;
+            border-top: 2px solid #e2eaf9;
+            padding-top: 20px;
+            transition: all 0.3s ease;
+        }
+        .panel-container.active {
+            display: block;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .panel-header h2 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #0b1a33;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .panel-header h2 .badge {
+            font-size: 12px;
+            font-weight: 600;
+            padding: 2px 12px;
+            border-radius: 30px;
+        }
+        .panel-header .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #9aaec9;
+            padding: 0 8px;
+            transition: 0.2s;
+        }
+        .panel-header .close-btn:hover {
+            color: #dc2626;
+            transform: rotate(90deg);
+        }
+        .panel-header .panel-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .panel-header .panel-toolbar .btn-panel-add {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 16px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #4f7df3;
+            background: rgba(79, 125, 243, 0.08);
+            border: 2px dashed #b7cdf0;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            font-family: inherit;
+        }
+        .btn-panel-add:hover {
+            background: rgba(79, 125, 243, 0.14);
+            border-color: #4f7df3;
+        }
+        .panel-header .panel-toolbar .btn-panel-reset {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 16px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #dc2626;
+            background: rgba(239, 68, 68, 0.08);
+            border: 2px dashed #fca5a5;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            font-family: inherit;
+        }
+        .btn-panel-reset:hover {
+            background: rgba(239, 68, 68, 0.14);
+            border-color: #dc2626;
+        }
+        .panel-count {
+            font-size: 13px;
+            color: #6b7f9e;
+            font-weight: 500;
+        }
+        .panel-count .count {
+            font-weight: 700;
+            color: #0b1a33;
+        }
+
+        /* ===== 盈亏计算器 ===== */
+        .profit-table-wrap {
+            overflow-x: auto;
+            border-radius: 16px;
+            border: 1px solid rgba(79, 125, 243, 0.10);
+            background: #f8fbff;
+            padding: 4px 2px 2px 2px;
+        }
+        .profit-table-wrap table {
+            width: 100%;
+            min-width: 1100px;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        .profit-table-wrap thead th {
+            background: #e8effa;
+            color: #1e2f4a;
+            font-weight: 600;
+            font-size: 11px;
+            padding: 10px 6px;
+            text-align: center;
+            border-bottom: 2px solid #d5e0ee;
+            white-space: nowrap;
+        }
+        .profit-table-wrap tbody td {
+            padding: 8px 6px;
+            text-align: center;
+            vertical-align: middle;
+            border-bottom: 1px solid #e9eff6;
+            font-size: 13px;
+        }
+        .profit-table-wrap tbody tr:last-child td {
+            border-bottom: none;
+        }
+        .profit-table-wrap tbody tr:hover {
+            background: rgba(79, 125, 243, 0.04);
+        }
+        .profit-table-wrap tbody td .profit-input {
+            width: 100%;
+            max-width: 90px;
+            padding: 4px 6px;
+            font-size: 13px;
+            font-weight: 500;
+            border: 2px solid #e2eaf9;
+            border-radius: 8px;
+            outline: none;
+            background: #f7faff;
+            text-align: center;
+            transition: 0.2s;
+            font-family: inherit;
+        }
+        .profit-table-wrap tbody td .profit-input:focus {
+            border-color: #4f7df3;
+            background: #ffffff;
+            box-shadow: 0 0 0 3px rgba(79, 125, 243, 0.10);
+        }
+        .profit-table-wrap tbody td .profit-input::-webkit-outer-spin-button,
+        .profit-table-wrap tbody td .profit-input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+        }
+        .profit-table-wrap tbody td .profit-input[type="number"] {
+            -moz-appearance: textfield;
+        }
+        .profit-result {
+            font-weight: 600;
+            color: #0b1a33;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+        .profit-result.negative {
+            color: #dc2626;
+            font-weight: 700;
+        }
+        .profit-result .pct {
+            font-weight: 400;
+            color: #6b7f9e;
+        }
+        .profit-sku-name {
+            font-weight: 700;
+            color: #1a2f52;
+            font-size: 12px;
+            background: rgba(79, 125, 243, 0.06);
+            padding: 2px 10px;
+            border-radius: 4px;
+            display: inline-block;
+            white-space: nowrap;
+        }
+        .profit-sku-name.empty {
+            color: #9aaec9;
+            background: transparent;
+            font-weight: 400;
+        }
+        .btn-profit-del {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 26px;
+            height: 26px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            background: transparent;
+            color: #9aaec9;
+        }
+        .btn-profit-del:hover {
+            background: rgba(239, 68, 68, 0.12);
+            color: #dc2626;
+        }
+
+        /* ===== 黄金投产 ===== */
+        .golden-body {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px 24px;
+            background: #f8fbff;
+            border-radius: 16px;
+            padding: 20px 24px;
+            border: 1px solid rgba(79, 125, 243, 0.10);
+        }
+        .golden-field {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .golden-field .label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1e2f4a;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .golden-field .label .info {
+            font-weight: 400;
+            color: #6b7f9e;
+            font-size: 12px;
+        }
+        .golden-field .label .auto-tag {
+            font-size: 10px;
+            font-weight: 500;
+            color: #059669;
+            background: rgba(16, 185, 129, 0.10);
+            padding: 0 8px;
+            border-radius: 10px;
+        }
+        .golden-field .label .manual-tag {
+            font-size: 10px;
+            font-weight: 500;
+            color: #f59e0b;
+            background: rgba(245, 158, 11, 0.12);
+            padding: 0 8px;
+            border-radius: 10px;
+        }
+        .golden-field input[type="number"],
+        .golden-field input[type="text"] {
+            width: 100%;
+            padding: 8px 12px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #0b1a33;
+            background: #f7faff;
+            border: 2px solid #e2eaf9;
+            border-radius: 10px;
+            outline: none;
+            transition: all 0.2s ease;
+            font-family: inherit;
+            text-align: center;
+        }
+        .golden-field input:focus {
+            border-color: #4f7df3;
+            background: #ffffff;
+            box-shadow: 0 0 0 3px rgba(79, 125, 243, 0.10);
+        }
+        .golden-field input::-webkit-outer-spin-button,
+        .golden-field input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+        }
+        .golden-field input[type="number"] {
+            -moz-appearance: textfield;
+        }
+        .golden-field .readonly-input {
+            background: #f0f4fe;
+            border-color: #d5e0ee;
+            color: #1a2f52;
+            cursor: default;
+        }
+        .golden-field .editable-input {
+            background: #f7faff;
+            border-color: #e2eaf9;
+            color: #0b1a33;
+            cursor: text;
+            font-weight: 600;
+        }
+        .golden-field .editable-input:focus {
+            border-color: #4f7df3;
+            background: #ffffff;
+            box-shadow: 0 0 0 3px rgba(79, 125, 243, 0.10);
+        }
+        .golden-field .editable-input.manual-mode {
+            border-color: #f59e0b;
+            background: #fffbeb;
+            box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.10);
+        }
+        .golden-field .editable-input.manual-mode:focus {
+            border-color: #f59e0b;
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+        }
+
+        .golden-field .radio-group {
+            display: flex;
+            gap: 20px;
+            padding: 6px 0;
+        }
+        .golden-field .radio-group .radio-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #1e2f4a;
+        }
+        .golden-field .radio-group .radio-item input[type="radio"] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+        .golden-field .radio-group .radio-item input[type="radio"]:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .golden-result {
+            grid-column: 1 / -1;
+            background: #FFF2CC;
+            border-radius: 12px;
+            padding: 16px 20px;
+            text-align: center;
+            margin-top: 4px;
+            border: 1px solid rgba(245, 158, 11, 0.20);
+        }
+        .golden-result .result-label {
+            font-size: 15px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 4px;
+        }
+        .golden-result .result-value {
+            font-size: 32px;
+            font-weight: 800;
+            color: #E67E22;
+            letter-spacing: -0.5px;
+        }
+        .golden-result .result-sub {
+            font-size: 13px;
+            color: #6b7f9e;
+            margin-top: 2px;
+        }
+
+        .golden-note {
+            grid-column: 1 / -1;
+            font-size: 12px;
+            color: #6b7f9e;
+            background: #f9fafb;
+            padding: 10px 16px;
+            border-radius: 8px;
+            line-height: 1.6;
+            border: 1px solid #edf2f7;
+        }
+        .golden-note strong {
+            color: #1e2f4a;
+        }
+
+        /* ===== 爆款利润计算器 ===== */
+        .profit-calc-body {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 16px 20px;
+            background: #f8fbff;
+            border-radius: 16px;
+            padding: 20px 24px;
+            border: 1px solid rgba(79, 125, 243, 0.10);
+        }
+        .profit-calc-field {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .profit-calc-field .label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1e2f4a;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .profit-calc-field .label .info {
+            font-weight: 400;
+            color: #6b7f9e;
+            font-size: 12px;
+        }
+        .profit-calc-field .label .auto-tag {
+            font-size: 10px;
+            font-weight: 500;
+            color: #059669;
+            background: rgba(16, 185, 129, 0.10);
+            padding: 0 8px;
+            border-radius: 10px;
+        }
+        .profit-calc-field .label .manual-tag {
+            font-size: 10px;
+            font-weight: 500;
+            color: #f59e0b;
+            background: rgba(245, 158, 11, 0.12);
+            padding: 0 8px;
+            border-radius: 10px;
+        }
+        .profit-calc-field input[type="number"],
+        .profit-calc-field input[type="text"] {
+            width: 100%;
+            padding: 8px 12px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #0b1a33;
+            background: #f7faff;
+            border: 2px solid #e2eaf9;
+            border-radius: 10px;
+            outline: none;
+            transition: all 0.2s ease;
+            font-family: inherit;
+            text-align: center;
+        }
+        .profit-calc-field input:focus {
+            border-color: #4f7df3;
+            background: #ffffff;
+            box-shadow: 0 0 0 3px rgba(79, 125, 243, 0.10);
+        }
+        .profit-calc-field input::-webkit-outer-spin-button,
+        .profit-calc-field input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+        }
+        .profit-calc-field input[type="number"] {
+            -moz-appearance: textfield;
+        }
+        .profit-calc-field .readonly-input {
+            background: #f0f4fe;
+            border-color: #d5e0ee;
+            color: #1a2f52;
+            cursor: default;
+        }
+        .profit-calc-field .editable-input {
+            background: #f7faff;
+            border-color: #e2eaf9;
+            color: #0b1a33;
+            cursor: text;
+            font-weight: 600;
+        }
+        .profit-calc-field .editable-input:focus {
+            border-color: #4f7df3;
+            background: #ffffff;
+            box-shadow: 0 0 0 3px rgba(79, 125, 243, 0.10);
+        }
+        .profit-calc-field .editable-input.manual-mode {
+            border-color: #f59e0b;
+            background: #fffbeb;
+            box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.10);
+        }
+        .profit-calc-field .editable-input.manual-mode:focus {
+            border-color: #f59e0b;
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+        }
+
+        .profit-calc-result-grid {
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 16px;
+            background: #ecfdf5;
+            border-radius: 12px;
+            padding: 16px 20px;
+            border: 1px solid rgba(16, 185, 129, 0.20);
+            margin-top: 4px;
+        }
+        .profit-calc-result-item {
+            text-align: center;
+        }
+        .profit-calc-result-item .rlabel {
+            font-size: 12px;
+            font-weight: 500;
+            color: #6b7f9e;
+        }
+        .profit-calc-result-item .rvalue {
+            font-size: 20px;
+            font-weight: 700;
+            color: #0b1a33;
+            margin-top: 2px;
+        }
+        .profit-calc-result-item .rvalue.positive {
+            color: #059669;
+        }
+        .profit-calc-result-item .rvalue.negative {
+            color: #dc2626;
+        }
+
+        .profit-calc-result-item.full {
+            grid-column: 1 / -1;
+            background: #d1fae5;
+            border-radius: 10px;
+            padding: 12px 16px;
+            text-align: center;
+        }
+        .profit-calc-result-item.full .rlabel {
+            font-size: 16px;
+            font-weight: 600;
+            color: #065f46;
+        }
+        .profit-calc-result-item.full .rvalue {
+            font-size: 32px;
+            font-weight: 800;
+            color: #047857;
+        }
+        .profit-calc-result-item.full .rvalue.negative {
+            color: #dc2626;
+        }
+
+        .profit-calc-note {
+            grid-column: 1 / -1;
+            font-size: 12px;
+            color: #6b7f9e;
+            background: #f9fafb;
+            padding: 10px 16px;
+            border-radius: 8px;
+            line-height: 1.6;
+            border: 1px solid #edf2f7;
+        }
+        .profit-calc-note strong {
+            color: #1e2f4a;
+        }
+
+        /* ===== 千川净成交出价计算器 ===== */
+        .qianchuan-body {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 16px 20px;
+            background: #f8fbff;
+            border-radius: 16px;
+            padding: 20px 24px;
+            border: 1px solid rgba(79, 125, 243, 0.10);
+        }
+        .qianchuan-field {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .qianchuan-field .label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1e2f4a;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .qianchuan-field .label .info {
+            font-weight: 400;
+            color: #6b7f9e;
+            font-size: 12px;
+        }
+        .qianchuan-field .label .auto-tag {
+            font-size: 10px;
+            font-weight: 500;
+            color: #059669;
+            background: rgba(16, 185, 129, 0.10);
+            padding: 0 8px;
+            border-radius: 10px;
+        }
+        .qianchuan-field .label .manual-tag {
+            font-size: 10px;
+            font-weight: 500;
+            color: #f59e0b;
+            background: rgba(245, 158, 11, 0.12);
+            padding: 0 8px;
+            border-radius: 10px;
+        }
+        .qianchuan-field input[type="number"],
+        .qianchuan-field input[type="text"] {
+            width: 100%;
+            padding: 8px 12px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #0b1a33;
+            background: #f7faff;
+            border: 2px solid #e2eaf9;
+            border-radius: 10px;
+            outline: none;
+            transition: all 0.2s ease;
+            font-family: inherit;
+            text-align: center;
+        }
+        .qianchuan-field input:focus {
+            border-color: #4f7df3;
+            background: #ffffff;
+            box-shadow: 0 0 0 3px rgba(79, 125, 243, 0.10);
+        }
+        .qianchuan-field input::-webkit-outer-spin-button,
+        .qianchuan-field input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+        }
+        .qianchuan-field input[type="number"] {
+            -moz-appearance: textfield;
+        }
+        .qianchuan-field .readonly-input {
+            background: #f0f4fe;
+            border-color: #d5e0ee;
+            color: #1a2f52;
+            cursor: default;
+        }
+        .qianchuan-field .editable-input {
+            background: #f7faff;
+            border-color: #e2eaf9;
+            color: #0b1a33;
+            cursor: text;
+            font-weight: 600;
+        }
+        .qianchuan-field .editable-input:focus {
+            border-color: #4f7df3;
+            background: #ffffff;
+            box-shadow: 0 0 0 3px rgba(79, 125, 243, 0.10);
+        }
+        .qianchuan-field .editable-input.manual-mode {
+            border-color: #f59e0b;
+            background: #fffbeb;
+            box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.10);
+        }
+        .qianchuan-field .editable-input.manual-mode:focus {
+            border-color: #f59e0b;
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+        }
+
+        .qianchuan-result-box {
+            grid-column: 1 / -1;
+            background: #fff8e8;
+            border-radius: 12px;
+            padding: 16px 20px;
+            text-align: center;
+            border: 1px solid rgba(245, 158, 11, 0.20);
+            margin-top: 4px;
+        }
+        .qianchuan-result-box .result-label {
+            font-size: 15px;
+            font-weight: 600;
+            color: #333;
+        }
+        .qianchuan-result-box .multi {
+            font-size: 16px;
+            color: #6b7f9e;
+            margin: 4px 0;
+        }
+        .qianchuan-result-box .out {
+            font-size: 28px;
+            font-weight: 800;
+            color: #e6642c;
+            letter-spacing: -0.5px;
+            margin: 6px 0;
+        }
+        .qianchuan-result-box .tip {
+            font-size: 13px;
+            color: #6b7f9e;
+            line-height: 1.6;
+        }
+
+        .qianchuan-note {
+            grid-column: 1 / -1;
+            font-size: 12px;
+            color: #6b7f9e;
+            background: #f9fafb;
+            padding: 10px 16px;
+            border-radius: 8px;
+            line-height: 1.6;
+            border: 1px solid #edf2f7;
+        }
+        .qianchuan-note strong {
+            color: #1e2f4a;
+        }
+
+        /* ===== 底部说明 ===== */
+        .footer-note {
+            margin-top: 20px;
+            font-size: 13px;
+            color: #7a8daa;
+            text-align: center;
+            border-top: 1px solid rgba(79, 125, 243, 0.08);
+            padding-top: 18px;
+            line-height: 1.6;
+        }
+        .footer-note strong {
+            color: #4a5c7a;
+        }
+        .footer-note .new-tag-foot {
+            display: inline-block;
+            background: #10b981;
+            color: #fff;
+            font-size: 10px;
+            font-weight: 600;
+            padding: 0 8px;
+            border-radius: 20px;
+            margin: 0 4px;
+        }
+
+        .row-index {
+            font-weight: 600;
+            color: #6b7f9e;
+            font-size: 13px;
+            min-width: 28px;
+            display: inline-block;
+        }
+        .row-index.sku-name {
+            color: #1a2f52;
+            font-weight: 700;
+            font-size: 12px;
+            background: rgba(79, 125, 243, 0.06);
+            padding: 0 6px;
+            border-radius: 4px;
+        }
+
+        .empty-row td {
+            padding: 30px 10px !important;
+            color: #9aaec9;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .row-enter {
+            animation: rowSlideIn 0.25s ease;
+        }
+        @keyframes rowSlideIn {
+            0% {
+                opacity: 0;
+                transform: translateY(-6px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .highlight-flash {
+            animation: flashGreen 0.35s ease;
+        }
+        @keyframes flashGreen {
+            0% {
+                background-color: rgba(79, 125, 243, 0.15);
+            }
+            100% {
+                background-color: transparent;
+            }
+        }
+        .fill-flash {
+            animation: fillPulse 0.4s ease;
+        }
+        @keyframes fillPulse {
+            0% {
+                background-color: rgba(16, 185, 129, 0.25);
+                transform: scale(1.02);
+            }
+            100% {
+                background-color: transparent;
+                transform: scale(1);
+            }
+        }
+
+        .contact-info {
+            position: fixed;
+            bottom: 20px;
+            right: 24px;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            color: #e2e8f0;
+            padding: 10px 20px;
+            border-radius: 40px;
+            font-size: 14px;
+            font-weight: 500;
+            font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            z-index: 999;
+            letter-spacing: 0.3px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            user-select: none;
+        }
+        .contact-info:hover {
+            background: rgba(15, 23, 42, 0.95);
+            transform: scale(1.03);
+            box-shadow: 0 6px 28px rgba(0, 0, 0, 0.25);
+        }
+        .contact-info .icon {
+            font-size: 16px;
+        }
+        .contact-info .label {
+            color: rgba(255, 255, 255, 0.5);
+            font-weight: 400;
+            font-size: 12px;
+        }
+        .contact-info .value {
+            color: #fcd34d;
+            font-weight: 600;
+        }
+
+        /* ===== 响应式 ===== */
+        @media (max-width: 820px) {
+            .calculator {
+                padding: 20px 14px 24px;
+                border-radius: 24px;
+            }
+            .header h1 {
+                font-size: 20px;
+            }
+            .header-icon {
+                font-size: 26px;
+            }
+            .subtitle {
+                font-size: 13px;
+                padding-left: 12px;
+                margin-bottom: 12px;
+            }
+            .toolbar {
+                padding: 12px 16px;
+                gap: 12px 16px;
+            }
+            .sku-search-wrap .sku-input {
+                width: 160px;
+                font-size: 13px;
+            }
+            .table-wrap table {
+                font-size: 13px;
+                min-width: 1080px;
+            }
+            .profit-table-wrap table {
+                min-width: 1000px;
+                font-size: 12px;
+            }
+            .table-wrap thead th {
+                font-size: 11px;
+                padding: 10px 6px;
+            }
+            .table-wrap tbody td {
+                padding: 8px 6px;
+                font-size: 13px;
+            }
+            .table-wrap tbody td .input-field {
+                font-size: 13px;
+                padding: 5px 4px 5px 18px;
+                min-width: 50px;
+            }
+            .input-wrap .sym {
+                font-size: 12px;
+                left: 6px;
+            }
+            .result-value {
+                font-size: 13px;
+            }
+            .result-value.double-price {
+                font-size: 14px;
+            }
+            .result-value.discount-fold {
+                font-size: 12px;
+                padding: 1px 8px;
+            }
+            .result-value.break-even-roi {
+                font-size: 12px;
+                padding: 1px 8px;
+            }
+            .btn-add {
+                font-size: 14px;
+                padding: 8px 20px;
+            }
+            .btn-upload {
+                font-size: 12px;
+                padding: 5px 12px;
+            }
+            .btn-sku-fill {
+                font-size: 12px;
+                padding: 5px 12px;
+            }
+            .btn-profit,
+            .btn-golden,
+            .btn-profit-calc,
+            .btn-qianchuan {
+                font-size: 9px;
+                padding: 3px 6px;
+            }
+            .profit-table-wrap tbody td .profit-input {
+                max-width: 70px;
+                font-size: 12px;
+            }
+            .contact-info {
+                bottom: 14px;
+                right: 16px;
+                padding: 8px 16px;
+                font-size: 12px;
+            }
+            .contact-info .label {
+                font-size: 11px;
+            }
+            .panel-header .panel-toolbar .btn-panel-add {
+                font-size: 12px;
+                padding: 4px 12px;
+            }
+            .panel-header .panel-toolbar .btn-panel-reset {
+                font-size: 12px;
+                padding: 4px 12px;
+            }
+            .golden-body {
+                grid-template-columns: 1fr 1fr;
+                padding: 16px;
+                gap: 12px 16px;
+            }
+            .profit-calc-body {
+                grid-template-columns: 1fr 1fr;
+                padding: 16px;
+                gap: 12px 16px;
+            }
+            .profit-calc-result-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            .qianchuan-body {
+                grid-template-columns: 1fr 1fr;
+                padding: 16px;
+                gap: 12px 16px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .calculator {
+                padding: 16px 10px 20px;
+                border-radius: 20px;
+            }
+            .header h1 {
+                font-size: 18px;
+            }
+            .header-icon {
+                font-size: 22px;
+            }
+            .subtitle {
+                font-size: 12px;
+                margin-bottom: 10px;
+                padding-left: 8px;
+            }
+            .toolbar {
+                padding: 10px 12px;
+                gap: 10px 12px;
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .toolbar-section {
+                flex-wrap: wrap;
+                justify-content: flex-start;
+            }
+            .sku-search-wrap .sku-input {
+                width: 100%;
+                flex: 1;
+                min-width: 100px;
+            }
+            .table-wrap table {
+                font-size: 12px;
+                min-width: 980px;
+            }
+            .profit-table-wrap table {
+                min-width: 900px;
+                font-size: 11px;
+            }
+            .table-wrap thead th {
+                font-size: 10px;
+                padding: 8px 4px;
+            }
+            .table-wrap tbody td {
+                padding: 6px 4px;
+                font-size: 12px;
+            }
+            .table-wrap tbody td .input-field {
+                font-size: 12px;
+                padding: 4px 4px 4px 16px;
+                min-width: 40px;
+                border-radius: 8px;
+            }
+            .input-wrap .sym {
+                font-size: 11px;
+                left: 4px;
+            }
+            .result-value {
+                font-size: 12px;
+            }
+            .result-value.double-price {
+                font-size: 13px;
+            }
+            .result-value.discount-fold {
+                font-size: 11px;
+                padding: 1px 6px;
+            }
+            .result-value.break-even-roi {
+                font-size: 11px;
+                padding: 1px 6px;
+            }
+            .btn-add {
+                font-size: 13px;
+                padding: 6px 16px;
+                gap: 4px;
+            }
+            .btn-icon {
+                width: 26px;
+                height: 26px;
+                font-size: 14px;
+            }
+            .status-badge {
+                font-size: 10px;
+                padding: 1px 8px;
+            }
+            .footer-note {
+                font-size: 11px;
+            }
+            .btn-upload {
+                font-size: 12px;
+                padding: 4px 10px;
+            }
+            .btn-sku-fill {
+                font-size: 12px;
+                padding: 4px 10px;
+            }
+            .upload-status {
+                font-size: 12px;
+            }
+            .btn-profit,
+            .btn-golden,
+            .btn-profit-calc,
+            .btn-qianchuan {
+                font-size: 8px;
+                padding: 2px 4px;
+                margin-right: 1px;
+            }
+            .profit-table-wrap tbody td .profit-input {
+                max-width: 55px;
+                font-size: 11px;
+                padding: 2px 4px;
+            }
+            .panel-header h2 {
+                font-size: 17px;
+            }
+            .manual-badge {
+                font-size: 8px;
+                line-height: 16px;
+                padding: 0 6px;
+            }
+            .contact-info {
+                bottom: 12px;
+                right: 12px;
+                padding: 6px 14px;
+                font-size: 11px;
+                border-radius: 30px;
+            }
+            .contact-info .label {
+                display: none;
+            }
+            .contact-info .icon {
+                font-size: 14px;
+            }
+            .panel-header .panel-toolbar .btn-panel-add {
+                font-size: 11px;
+                padding: 3px 10px;
+            }
+            .panel-header .panel-toolbar .btn-panel-reset {
+                font-size: 11px;
+                padding: 3px 10px;
+            }
+            .profit-sku-name {
+                font-size: 10px;
+                padding: 1px 6px;
+            }
+            .profit-result {
+                font-size: 11px;
+            }
+            .profit-table-wrap thead th {
+                font-size: 9px;
+                padding: 6px 3px;
+            }
+            .profit-table-wrap tbody td {
+                padding: 4px 3px;
+                font-size: 11px;
+            }
+            .golden-body {
+                grid-template-columns: 1fr;
+                padding: 12px;
+                gap: 10px;
+            }
+            .golden-result .result-value {
+                font-size: 24px;
+            }
+            .golden-field .radio-group {
+                gap: 12px;
+                flex-wrap: wrap;
+            }
+            .profit-calc-body {
+                grid-template-columns: 1fr;
+                padding: 12px;
+                gap: 10px;
+            }
+            .profit-calc-result-grid {
+                grid-template-columns: 1fr 1fr;
+                padding: 12px;
+                gap: 10px;
+            }
+            .profit-calc-result-item .rvalue {
+                font-size: 17px;
+            }
+            .profit-calc-result-item.full .rvalue {
+                font-size: 26px;
+            }
+            .qianchuan-body {
+                grid-template-columns: 1fr;
+                padding: 12px;
+                gap: 10px;
+            }
+            .qianchuan-result-box .out {
+                font-size: 22px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="calculator">
+
+        <!-- ===== 头部 ===== -->
+        <div class="header">
+            <span class="header-icon">📊</span>
+            <h1>新品定价 · 批量计算</h1>
+            <div class="header-actions">
+                <span style="font-size:13px;color:#6b7f9e;font-weight:500;" id="rowCountDisplay">共 0 个产品</span>
+            </div>
+        </div>
+        <p class="subtitle">
+            每行一个产品，输入成本、运费和目标利润率，自动计算标价及折扣。
+            <span class="highlight">「标价(默认2倍)」</span> 默认 = 目标折后价 × 2，
+            <span class="highlight">「目标折后价」</span> 可手动输入，三者联动。
+            <span class="new-tag">NEW</span> 新增 <span class="highlight">「保本投产比」</span> 列。
+            <span class="highlight">#列会显示SKU名称</span> · 点击下方按钮调用分析工具。
+        </p>
+
+        <!-- ===== 工具栏 ===== -->
+        <div class="toolbar">
+            <div class="toolbar-section">
+                <span class="toolbar-label">📁 成本表</span>
+                <div class="upload-wrap">
+                    <button class="btn-upload" id="uploadBtn">📤 上传文件</button>
+                    <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" />
+                </div>
+                <span class="upload-status" id="uploadStatus">
+                    已加载: <span class="count" id="skuCount">0</span> 个SKU
+                </span>
+            </div>
+
+            <div class="toolbar-section sku-search-wrap">
+                <span class="toolbar-label">🔍 SKU</span>
+                <input type="text" class="sku-input" id="skuSearchInput" placeholder="输入SKU编号" list="skuSuggestions" autocomplete="off" />
+                <datalist id="skuSuggestions"></datalist>
+                <span class="sku-match-result" id="skuMatchResult">
+                    <span class="hint">匹配结果</span>
+                </span>
+                <button class="btn-sku-fill" id="skuFillBtn" disabled>填充到当前行</button>
+            </div>
+        </div>
+
+        <!-- ===== 主表 ===== -->
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="min-width:50px;">
+                            <div class="th-inner">
+                                # <small>(SKU)</small>
+                            </div>
+                        </th>
+                        <th style="min-width:100px;">
+                            <div class="th-inner">
+                                采购成本 <small>(元)</small>
+                            </div>
+                        </th>
+                        <th style="min-width:80px;">
+                            <div class="th-inner">
+                                运费 <small>(元)</small>
+                            </div>
+                        </th>
+                        <th style="min-width:100px;">
+                            <div class="th-inner">
+                                目标利润率 <small>(%)</small>
+                                <span class="mode-tag">可编辑</span>
+                            </div>
+                        </th>
+                        <th style="min-width:80px;">
+                            <div class="th-inner">
+                                总成本 <small>(元)</small>
+                            </div>
+                        </th>
+                        <th style="min-width:130px;background:#e0e9f7;">
+                            <div class="th-inner">
+                                标价(默认2倍) <small>(元)</small>
+                                <span class="mode-tag">可编辑 · 联动</span>
+                            </div>
+                        </th>
+                        <th style="min-width:130px;background:#e0e9f7;">
+                            <div class="th-inner">
+                                目标折后价 <small>(元)</small>
+                                <span class="mode-tag">可编辑 · 联动</span>
+                            </div>
+                        </th>
+                        <th style="min-width:85px;">
+                            <div class="th-inner">
+                                每件利润 <small>(元)</small>
+                            </div>
+                        </th>
+                        <th style="min-width:95px;background:#ecfdf5;">
+                            <div class="th-inner">
+                                🎯 保本投产比
+                                <span class="new-tag-th">NEW</span>
+                            </div>
+                        </th>
+                        <th style="min-width:100px;background:#e0e9f7;">
+                            <div class="th-inner">
+                                🏷️ 折扣力度
+                            </div>
+                        </th>
+                        <th style="min-width:190px;">操作</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <!-- 动态行 -->
+                </tbody>
+            </table>
+        </div>
+
+        <div class="add-row-area">
+            <button class="btn-add" id="addRowBtn">
+                <span style="font-size:20px;line-height:1;">＋</span> 添加产品
+            </button>
+        </div>
+
+        <!-- ===== 盈亏计算器面板 ===== -->
+        <div id="profitCalculatorPanel" class="panel-container">
+            <div class="panel-header">
+                <h2>📈 盈亏测算 · 多行对比</h2>
+                <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                    <span class="panel-count">共 <span class="count" id="profitCount">0</span> 个产品</span>
+                    <div class="panel-toolbar">
+                        <button class="btn-panel-add" id="addProfitRowBtn">＋ 添加行</button>
+                        <button class="btn-panel-reset" id="resetProfitBtn">清空</button>
+                        <button class="close-btn" id="closeProfitPanel">✕</button>
+                    </div>
+                </div>
+            </div>
+            <div class="profit-table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="min-width:80px;background:#e0e9f7;">SKU</th>
+                            <th style="background:#fca5a5;color:#7f1d1d;">售价（元）</th>
+                            <th style="background:#fca5a5;color:#7f1d1d;">成本（元）</th>
+                            <th style="background:#86efac;color:#14532d;">利润（元）</th>
+                            <th style="background:#86efac;color:#14532d;">毛利率%</th>
+                            <th style="background:#86efac;color:#14532d;">理论持平投产</th>
+                            <th style="background:#fcd34d;color:#78350f;">实际投产</th>
+                            <th style="background:#86efac;color:#14532d;">到手利润率</th>
+                            <th style="background:#86efac;color:#14532d;">毛盈利（元）</th>
+                            <th style="background:#86efac;color:#14532d;">成交花费（元）</th>
+                            <th style="background:#fcd34d;color:#78350f;">退款（单）</th>
+                            <th style="background:#fcd34d;color:#78350f;">订单量</th>
+                            <th style="background:#86efac;color:#14532d;">利润（元）</th>
+                            <th style="background:#86efac;color:#14532d;">净利润（元）</th>
+                            <th style="background:#86efac;color:#14532d;">净利润率</th>
+                            <th style="background:#fcd34d;color:#78350f;">扣点%</th>
+                            <th style="background:#fcd34d;color:#78350f;">运费险（元）</th>
+                            <th style="min-width:40px;">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="profitBody">
+                        <!-- 动态行 -->
+                    </tbody>
+                </table>
+            </div>
+            <div style="margin-top:12px;font-size:13px;color:#6b7f9e;">
+                <span style="background:#fca5a5;padding:2px 8px;border-radius:4px;color:#7f1d1d;font-weight:600;">必填</span>
+                <span style="background:#fcd34d;padding:2px 8px;border-radius:4px;color:#78350f;font-weight:600;margin-left:8px;">手动</span>
+                <span style="background:#86efac;padding:2px 8px;border-radius:4px;color:#14532d;font-weight:600;margin-left:8px;">自动</span>
+                <span style="margin-left:16px;">修改任意输入，自动重新计算 · 点击主表「盈亏」自动导入</span>
+                <span style="margin-left:16px;color:#8b5cf6;font-weight:500;">默认: 实际投产=理论持平投产×1.5 | 退款=10 | 订单量=100</span>
+            </div>
+        </div>
+
+        <!-- ===== 黄金投产计算器面板 ===== -->
+        <div id="goldenROIPanel" class="panel-container">
+            <div class="panel-header">
+                <h2>
+                    🏆 黄金投产计算器
+                    <span class="badge" style="font-size:12px;font-weight:600;color:#f59e0b;background:rgba(245,158,11,0.12);padding:2px 12px;border-radius:30px;">与主表联动</span>
+                </h2>
+                <button class="close-btn" id="closeGoldenPanel">✕</button>
+            </div>
+            <div class="golden-body">
+                <div class="golden-field">
+                    <label class="label">毛利率区间 <span class="info">(自动匹配)</span></label>
+                    <div class="radio-group" id="goldenProfitGroup">
+                        <label class="radio-item">
+                            <input type="radio" name="goldenProfitRate" value="above40" checked disabled />
+                            毛利率 &gt; 40%
+                        </label>
+                        <label class="radio-item">
+                            <input type="radio" name="goldenProfitRate" value="below40" disabled />
+                            毛利率 &lt; 40%
+                        </label>
+                    </div>
+                </div>
+
+                <div class="golden-field">
+                    <label class="label">当前产品 <span class="info">(主表选中行)</span></label>
+                    <input type="text" id="goldenCurrentSku" class="readonly-input" value="未选中" readonly style="text-align:center;font-weight:600;color:#1a2f52;" />
+                </div>
+
+                <div class="golden-field">
+                    <label class="label">
+                        保本投产
+                        <span class="auto-tag" id="goldenBreakEvenTag">自动</span>
+                        <span class="info">(目标折后价 ÷ 每件利润)</span>
+                    </label>
+                    <input type="number" id="goldenBreakEven" step="0.001" class="editable-input" value="0" style="font-weight:600;color:#1a2f52;" />
+                </div>
+
+                <div class="golden-field">
+                    <label class="label">
+                        结算投产
+                        <span class="info">(保本投产 × 系数)</span>
+                    </label>
+                    <input type="number" id="goldenSettlement" step="0.001" value="0" />
+                </div>
+
+                <div class="golden-field">
+                    <label class="label">订单结算率 <span class="info">(%)</span></label>
+                    <input type="number" id="goldenOrderRate" step="0.01" value="88" />
+                </div>
+
+                <div class="golden-field">
+                    <label class="label">退款豁免率 <span class="info">(%)</span></label>
+                    <input type="number" id="goldenRefundExemption" step="0.01" value="45.63" />
+                </div>
+
+                <div class="golden-field">
+                    <label class="label">系数 <span class="info">(根据毛利率区间)</span></label>
+                    <input type="text" id="goldenCoefficient" class="readonly-input" value="1.3" readonly style="font-weight:700;color:#f59e0b;" />
+                </div>
+
+                <div class="golden-result">
+                    <div class="result-label">🏷️ 最终设置值（黄金投产）</div>
+                    <div class="result-value" id="goldenFinalResult">0.000000000</div>
+                    <div class="result-sub">=(结算投产 × 1.05) ÷ 有效结算率</div>
+                </div>
+
+                <div class="golden-note">
+                    <strong>📌 数据来源：</strong> 自动从主表选中行读取「总成本」「目标折后价」「目标利润率」。
+                    保本投产 = 目标折后价 ÷ (目标折后价 - 总成本) &nbsp;·&nbsp;
+                    毛利率区间根据目标利润率自动匹配（&gt;40% 系数1.3，&lt;40% 系数1.7）。
+                    <br /><strong>✏️ 保本投产：</strong> 默认自动填充，点击输入框可手动修改，修改后结算投产自动更新。
+                    修改任意参数，结果实时更新。
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== 爆款利润计算器面板 ===== -->
+        <div id="profitCalcPanel" class="panel-container">
+            <div class="panel-header">
+                <h2>
+                    💰 爆款利润计算器
+                    <span class="badge" style="font-size:12px;font-weight:600;color:#10b981;background:rgba(16,185,129,0.12);padding:2px 12px;border-radius:30px;">与主表联动</span>
+                </h2>
+                <button class="close-btn" id="closeProfitCalcPanel">✕</button>
+            </div>
+            <div class="profit-calc-body">
+                <div class="profit-calc-field">
+                    <label class="label">
+                        售价
+                        <span class="auto-tag" id="pcPriceTag">自动</span>
+                        <span class="info">(目标折后价)</span>
+                    </label>
+                    <input type="number" id="pcPrice" step="0.01" class="editable-input" value="0" style="font-weight:600;color:#1a2f52;" />
+                </div>
+                <div class="profit-calc-field">
+                    <label class="label">
+                        运费险 <span class="info">(元/单)</span>
+                    </label>
+                    <input type="number" id="pcShippingInsurance" step="0.01" value="0" />
+                </div>
+                <div class="profit-calc-field">
+                    <label class="label">
+                        成本 <span class="auto-tag">自动</span>
+                        <span class="info">(总成本)</span>
+                    </label>
+                    <input type="number" id="pcCost" step="0.01" class="readonly-input" value="0" readonly />
+                </div>
+
+                <div class="profit-calc-field">
+                    <label class="label">结算金额 <span class="info">(元)</span></label>
+                    <input type="number" id="pcSettlement" step="0.01" value="4175" />
+                </div>
+                <div class="profit-calc-field">
+                    <label class="label">推广花费 <span class="info">(元)</span></label>
+                    <input type="number" id="pcPromotion" step="0.01" value="1473" />
+                </div>
+                <div class="profit-calc-field">
+                    <label class="label">实际投产 <span class="auto-tag">自动</span></label>
+                    <input type="text" id="pcROI" class="readonly-input" value="0.000" readonly style="font-weight:700;color:#1a2f52;" />
+                </div>
+
+                <div class="profit-calc-result-grid">
+                    <div class="profit-calc-result-item">
+                        <div class="rlabel">平台手续费 (0.6%)</div>
+                        <div class="rvalue" id="pcPlatformFee">0.00</div>
+                    </div>
+                    <div class="profit-calc-result-item">
+                        <div class="rlabel">每单总成本</div>
+                        <div class="rvalue" id="pcTotalCostPerOrder">0.00</div>
+                    </div>
+                    <div class="profit-calc-result-item">
+                        <div class="rlabel">每单利润</div>
+                        <div class="rvalue" id="pcProfitPerOrder">0.00</div>
+                    </div>
+                    <div class="profit-calc-result-item">
+                        <div class="rlabel">总毛利</div>
+                        <div class="rvalue" id="pcGrossProfit">0.00</div>
+                    </div>
+                    <div class="profit-calc-result-item full">
+                        <div class="rlabel">💰 预估利润</div>
+                        <div class="rvalue" id="pcEstimatedProfit">0.00</div>
+                    </div>
+                </div>
+
+                <div class="profit-calc-note">
+                    <strong>📌 数据来源：</strong> 售价默认从主表「目标折后价」自动同步，<strong>也可手动修改</strong>。
+                    平台手续费按售价的0.6%计算，实际投产 = 结算金额 ÷ 推广花费。
+                    修改任意参数，结果实时更新。
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== 千川净成交出价计算器面板 ===== -->
+        <div id="qianchuanPanel" class="panel-container">
+            <div class="panel-header">
+                <h2>
+                    📢 千川净成交出价计算器
+                    <span class="badge" style="font-size:12px;font-weight:600;color:#ec4899;background:rgba(236,72,153,0.12);padding:2px 12px;border-radius:30px;">与主表联动</span>
+                </h2>
+                <button class="close-btn" id="closeQianchuanPanel">✕</button>
+            </div>
+            <div class="qianchuan-body">
+                <div class="qianchuan-field">
+                    <label class="label">
+                        售价
+                        <span class="auto-tag" id="qcPriceTag">自动</span>
+                        <span class="info">(目标折后价)</span>
+                    </label>
+                    <input type="number" id="qcPrice" step="0.01" class="editable-input" value="0" style="font-weight:600;color:#1a2f52;" />
+                </div>
+                <div class="qianchuan-field">
+                    <label class="label">
+                        佣金率 <span class="info">(%)</span>
+                    </label>
+                    <input type="number" id="qcRate" step="0.01" value="10" />
+                </div>
+                <div class="qianchuan-field">
+                    <label class="label">当前产品 <span class="info">(SKU)</span></label>
+                    <input type="text" id="qcCurrentSku" class="readonly-input" value="未选中" readonly style="text-align:center;font-weight:600;color:#1a2f52;" />
+                </div>
+
+                <div class="qianchuan-result-box">
+                    <div class="result-label">📊 参考档位倍数</div>
+                    <div class="multi" id="qcMulti">-</div>
+                    <div class="out" id="qcOut">建议出价：-</div>
+                    <div class="tip">规则：售价、佣金率取较大值匹配档位<br/>公式：(100 ÷ 佣金率) × 出价倍数</div>
+                </div>
+
+                <div class="qianchuan-note">
+                    <strong>📌 数据来源：</strong> 售价默认从主表「目标折后价」自动同步，<strong>也可手动修改</strong>。
+                    佣金率由用户手动输入（默认10%），修改后实时计算建议出价区间。
+                </div>
+            </div>
+        </div>
+
+        <div class="footer-note">
+            <strong>💡 说明：</strong> 折扣力度 = (1 − 折扣率) × 10 折 &nbsp;·&nbsp;
+            正折扣率=需降价，负折扣率=可涨价 &nbsp;·&nbsp;
+            点击行可选中，输入SKU出现下拉联想，点击即填充成本，同时#列变为SKU名称。
+            <span class="new-tag-foot">NEW</span> <strong>🎯 保本投产比</strong> = 目标折后价 ÷ 每件利润，当每件利润 ≤ 0 时显示 "—"。
+            <br /><strong>📈 盈亏：</strong> 点击主表「盈亏」按钮，自动导入数据到多行盈亏计算器。
+            <br /><strong>🏆 黄金投产：</strong> 点击主表「投产」按钮，自动分析当前行的投产比设置。<span style="color:#f59e0b;font-weight:500;">（保本投产可手动修改）</span>
+            <br /><strong>💰 爆款利润：</strong> 点击主表「利润」按钮，自动计算当前行的预估利润。<span style="color:#10b981;font-weight:500;">（售价可手动修改）</span>
+            <br /><strong>📢 千川出价：</strong> 点击主表「千川」按钮，自动获取售价并计算建议出价区间。<span style="color:#ec4899;font-weight:500;">（售价可手动修改）</span>
+            <br /><strong>✏️ 标价 &amp; 目标折后价：</strong> 两者联动，修改任一自动更新另一个及目标利润率。标价默认 = 目标折后价 × 2。
+        </div>
+
+    </div>
+
+    <!-- 右下角联系方式 -->
+    <div class="contact-info">
+        <span class="icon">📱</span>
+        <span class="label">联系</span>
+        <span class="value">txp80290335</span>
+    </div>
+
+    <script>
+        (function() {
+            'use strict';
+
+            // ===================================================================
+            //  DOM 引用
+            // ===================================================================
+            const tbody = document.getElementById('tableBody');
+            const addBtn = document.getElementById('addRowBtn');
+            const rowCountDisplay = document.getElementById('rowCountDisplay');
+
+            const fileInput = document.getElementById('fileInput');
+            const uploadBtn = document.getElementById('uploadBtn');
+            const skuCountEl = document.getElementById('skuCount');
+            const uploadStatus = document.getElementById('uploadStatus');
+            const skuSearchInput = document.getElementById('skuSearchInput');
+            const skuMatchResult = document.getElementById('skuMatchResult');
+            const skuFillBtn = document.getElementById('skuFillBtn');
+            const skuSuggestions = document.getElementById('skuSuggestions');
+
+            // 盈亏面板
+            const profitPanel = document.getElementById('profitCalculatorPanel');
+            const closeProfitBtn = document.getElementById('closeProfitPanel');
+            const profitBody = document.getElementById('profitBody');
+            const addProfitRowBtn = document.getElementById('addProfitRowBtn');
+            const resetProfitBtn = document.getElementById('resetProfitBtn');
+            const profitCount = document.getElementById('profitCount');
+
+            // 黄金投产面板
+            const goldenPanel = document.getElementById('goldenROIPanel');
+            const closeGoldenBtn = document.getElementById('closeGoldenPanel');
+            const goldenBreakEven = document.getElementById('goldenBreakEven');
+            const goldenBreakEvenTag = document.getElementById('goldenBreakEvenTag');
+            const goldenSettlement = document.getElementById('goldenSettlement');
+            const goldenOrderRate = document.getElementById('goldenOrderRate');
+            const goldenRefundExemption = document.getElementById('goldenRefundExemption');
+            const goldenFinalResult = document.getElementById('goldenFinalResult');
+            const goldenCoefficient = document.getElementById('goldenCoefficient');
+            const goldenCurrentSku = document.getElementById('goldenCurrentSku');
+            const goldenProfitRadios = document.querySelectorAll('input[name="goldenProfitRate"]');
+
+            // 爆款利润面板
+            const profitCalcPanel = document.getElementById('profitCalcPanel');
+            const closeProfitCalcBtn = document.getElementById('closeProfitCalcPanel');
+            const pcPrice = document.getElementById('pcPrice');
+            const pcPriceTag = document.getElementById('pcPriceTag');
+            const pcCost = document.getElementById('pcCost');
+            const pcShippingInsurance = document.getElementById('pcShippingInsurance');
+            const pcSettlement = document.getElementById('pcSettlement');
+            const pcPromotion = document.getElementById('pcPromotion');
+            const pcROI = document.getElementById('pcROI');
+            const pcPlatformFee = document.getElementById('pcPlatformFee');
+            const pcTotalCostPerOrder = document.getElementById('pcTotalCostPerOrder');
+            const pcProfitPerOrder = document.getElementById('pcProfitPerOrder');
+            const pcGrossProfit = document.getElementById('pcGrossProfit');
+            const pcEstimatedProfit = document.getElementById('pcEstimatedProfit');
+
+            // 千川面板
+            const qianchuanPanel = document.getElementById('qianchuanPanel');
+            const closeQianchuanBtn = document.getElementById('closeQianchuanPanel');
+            const qcPrice = document.getElementById('qcPrice');
+            const qcPriceTag = document.getElementById('qcPriceTag');
+            const qcRate = document.getElementById('qcRate');
+            const qcCurrentSku = document.getElementById('qcCurrentSku');
+            const qcMulti = document.getElementById('qcMulti');
+            const qcOut = document.getElementById('qcOut');
+
+            // ===================================================================
+            //  主表状态
+            // ===================================================================
+            let rowsData = [];
+            let selectedRowIndex = -1;
+            let skuMap = new Map();
+            let currentMatchedSku = null;
+            let currentMatchedCost = null;
+
+            // ===================================================================
+            //  盈亏计算器状态（多行）
+            // ===================================================================
+            let profitData = [];
+
+            // ===================================================================
+            //  工具函数
+            // ===================================================================
+            function fmt(v) {
+                if (!isFinite(v) || isNaN(v)) return '—';
+                return Number(v).toFixed(2);
+            }
+
+            function clamp(v, min, max) {
+                return Math.min(Math.max(v, min), max);
+            }
+
+            // ===================================================================
+            //  核心计算 - 主表（三者联动）
+            // ===================================================================
+            function calcRowFull(cost, shipping, profitRate, targetPrice, basePrice, trigger) {
+                const totalCost = cost + shipping;
+
+                let finalProfitRate = profitRate;
+                let finalTargetPrice = targetPrice;
+                let finalBasePrice = basePrice;
+
+                if (trigger === 'profitRate' || (trigger === undefined && profitRate !== undefined && profitRate !==
+                        null && !isNaN(profitRate))) {
+                    const pRate = clamp(profitRate, 0, 100);
+                    finalProfitRate = pRate;
+                    if (totalCost === 0) {
+                        finalTargetPrice = 0;
+                    } else if (pRate >= 100) {
+                        finalTargetPrice = Infinity;
+                    } else {
+                        finalTargetPrice = totalCost / (1 - pRate / 100);
+                    }
+                    if (!isFinite(finalTargetPrice) || finalTargetPrice <= 0) {
+                        finalTargetPrice = totalCost * 1.2 || 0;
+                    }
+                    finalBasePrice = finalTargetPrice * 2;
+                } else if (trigger === 'targetPrice' || (trigger === undefined && targetPrice !== undefined && targetPrice !==
+                        null && !isNaN(targetPrice) && targetPrice > 0)) {
+                    finalTargetPrice = Math.max(targetPrice, 0);
+                    if (totalCost === 0) {
+                        finalProfitRate = 0;
+                    } else if (finalTargetPrice <= 0) {
+                        finalProfitRate = 0;
+                    } else {
+                        const p = (1 - totalCost / finalTargetPrice) * 100;
+                        finalProfitRate = clamp(p, -999, 99.9);
+                    }
+                    finalBasePrice = finalTargetPrice * 2;
+                } else if (trigger === 'basePrice' || (trigger === undefined && basePrice !== undefined && basePrice !==
+                        null && !isNaN(basePrice) && basePrice > 0)) {
+                    finalBasePrice = Math.max(basePrice, 0);
+                    finalTargetPrice = finalBasePrice / 2;
+                    if (totalCost === 0) {
+                        finalProfitRate = 0;
+                    } else if (finalTargetPrice <= 0) {
+                        finalProfitRate = 0;
+                    } else {
+                        const p = (1 - totalCost / finalTargetPrice) * 100;
+                        finalProfitRate = clamp(p, -999, 99.9);
+                    }
+                } else {
+                    if (profitRate !== undefined && profitRate !== null && !isNaN(profitRate)) {
+                        finalProfitRate = clamp(profitRate, 0, 100);
+                    } else {
+                        finalProfitRate = 0;
+                    }
+                    if (targetPrice !== undefined && targetPrice !== null && !isNaN(targetPrice) && targetPrice > 0) {
+                        finalTargetPrice = targetPrice;
+                    } else if (totalCost > 0) {
+                        finalTargetPrice = totalCost / (1 - finalProfitRate / 100);
+                    } else {
+                        finalTargetPrice = 0;
+                    }
+                    if (basePrice !== undefined && basePrice !== null && !isNaN(basePrice) && basePrice > 0) {
+                        finalBasePrice = basePrice;
+                    } else {
+                        finalBasePrice = finalTargetPrice * 2 || 0;
+                    }
+                }
+
+                if (!isFinite(finalTargetPrice) || finalTargetPrice < 0) finalTargetPrice = 0;
+                if (!isFinite(finalBasePrice) || finalBasePrice < 0) finalBasePrice = 0;
+                if (!isFinite(finalProfitRate) || isNaN(finalProfitRate)) finalProfitRate = 0;
+
+                const profitAmount = finalTargetPrice - totalCost;
+
+                let breakEvenROI;
+                if (profitAmount > 0 && finalTargetPrice > 0) {
+                    breakEvenROI = finalTargetPrice / profitAmount;
+                } else {
+                    breakEvenROI = Infinity;
+                }
+
+                let discountRate, discountLevel, status;
+                if (finalBasePrice <= 0 || finalTargetPrice <= 0) {
+                    discountRate = 0;
+                    discountLevel = 0;
+                    status = 'error';
+                } else {
+                    discountRate = (finalBasePrice - finalTargetPrice) / finalBasePrice * 100;
+                    discountLevel = 1 - discountRate / 100;
+                    if (Math.abs(discountRate) < 0.01) status = 'equal';
+                    else if (discountRate > 0) status = 'down';
+                    else status = 'up';
+                }
+
+                return {
+                    totalCost,
+                    basePrice: finalBasePrice,
+                    targetPrice: finalTargetPrice,
+                    profitRate: finalProfitRate,
+                    profitAmount,
+                    breakEvenROI,
+                    discountRate,
+                    discountLevel,
+                    status,
+                    defaultBase: finalTargetPrice * 2 || 0
+                };
+            }
+
+            // ===================================================================
+            //  主表 UI 更新（支持传入 tr 元素，用于增量添加）
+            // ===================================================================
+            function updateRowUI(index, keepSku, trElement) {
+                if (index < 0 || index >= rowsData.length) return;
+                const data = rowsData[index];
+                const tr = trElement || tbody.querySelector(`tr[data-index="${index}"]`);
+                if (!tr) return;
+
+                const costInput = tr.querySelector('.cost-input');
+                const shipInput = tr.querySelector('.ship-input');
+                const profitInput = tr.querySelector('.profit-input');
+                const baseInput = tr.querySelector('.base-price-input');
+                const targetInput = tr.querySelector('.target-price-input');
+                const resultTds = tr.querySelectorAll('.result-td');
+                const indexSpan = tr.querySelector('.row-index');
+                const statusEl = tr.querySelector('.row-status-badge');
+
+                if (!costInput || !shipInput || !profitInput || !baseInput || !targetInput || resultTds.length < 6 || !indexSpan)
+                    return;
+
+                const cost = parseFloat(costInput.value) || 0;
+                const shipping = parseFloat(shipInput.value) || 0;
+
+                const profitVal = parseFloat(profitInput.value);
+                const baseVal = parseFloat(baseInput.value);
+                const targetVal = parseFloat(targetInput.value);
+
+                let trigger = data._lastTrigger || 'profitRate';
+                if (data._triggerProfit) { trigger = 'profitRate';
+                    data._triggerProfit = false; }
+                if (data._triggerBase) { trigger = 'basePrice';
+                    data._triggerBase = false; }
+                if (data._triggerTarget) { trigger = 'targetPrice';
+                    data._triggerTarget = false; }
+
+                if (!trigger || (trigger !== 'profitRate' && trigger !== 'targetPrice' && trigger !== 'basePrice')) {
+                    trigger = 'profitRate';
+                }
+
+                let pRate = (trigger === 'profitRate') ? profitVal : data.profitRate;
+                let tPrice = (trigger === 'targetPrice') ? targetVal : data.targetPrice;
+                let bPrice = (trigger === 'basePrice') ? baseVal : data.basePrice;
+
+                if (trigger === 'profitRate' && (isNaN(profitVal) || profitVal < 0)) {
+                    pRate = data.profitRate || 0;
+                }
+                if (trigger === 'targetPrice' && (isNaN(targetVal) || targetVal < 0)) {
+                    tPrice = data.targetPrice || 0;
+                }
+                if (trigger === 'basePrice' && (isNaN(baseVal) || baseVal < 0)) {
+                    bPrice = data.basePrice || 0;
+                }
+
+                if (isNaN(pRate) || pRate < 0) pRate = data.profitRate || 0;
+
+                const res = calcRowFull(cost, shipping, pRate, tPrice, bPrice, trigger);
+
+                data.cost = cost;
+                data.shipping = shipping;
+                data.profitRate = res.profitRate;
+                data.targetPrice = res.targetPrice;
+                data.basePrice = res.basePrice;
+                data.totalCost = res.totalCost;
+                data.profitAmount = res.profitAmount;
+                data.breakEvenROI = res.breakEvenROI;
+
+                profitInput.value = fmt(res.profitRate);
+                targetInput.value = fmt(res.targetPrice);
+                baseInput.value = fmt(res.basePrice);
+
+                if (trigger === 'basePrice' && baseVal > 0) {
+                    baseInput.classList.add('manual-mode');
+                    let badge = baseInput.parentNode.querySelector('.manual-badge');
+                    if (!badge) {
+                        badge = document.createElement('span');
+                        badge.className = 'manual-badge';
+                        badge.textContent = '手动';
+                        baseInput.parentNode.appendChild(badge);
+                    }
+                    badge.style.display = 'inline';
+                } else {
+                    baseInput.classList.remove('manual-mode');
+                    const badge = baseInput.parentNode.querySelector('.manual-badge');
+                    if (badge) badge.style.display = 'none';
+                }
+
+                if (trigger === 'targetPrice' && targetVal > 0) {
+                    targetInput.classList.add('manual-mode');
+                } else {
+                    targetInput.classList.remove('manual-mode');
+                }
+
+                resultTds[0].innerHTML = `<span class="result-value"><span class="currency">¥</span>${fmt(res.totalCost)}</span>`;
+                resultTds[3].innerHTML = `<span class="result-value"><span class="currency">¥</span>${fmt(res.profitAmount)}</span>`;
+                if (res.breakEvenROI === Infinity || !isFinite(res.breakEvenROI) || res.breakEvenROI <= 0) {
+                    resultTds[4].innerHTML = `<span class="result-value break-even-roi invalid">—</span>`;
+                } else {
+                    resultTds[4].innerHTML =
+                        `<span class="result-value break-even-roi">${res.breakEvenROI.toFixed(3)}</span>`;
+                }
+                let foldText;
+                if (res.discountLevel === Infinity || !isFinite(res.discountLevel)) foldText = '—';
+                else if (res.discountLevel >= 10) foldText = '>10折';
+                else if (res.discountLevel <= 0) foldText = '≤0折';
+                else foldText = `${fmt(res.discountLevel)}折`;
+                resultTds[5].innerHTML = `<span class="result-value discount-fold">${foldText}</span>`;
+
+                let badgeText, badgeClass;
+                if (res.status === 'error') { badgeText = '⚠️';
+                    badgeClass = 'error'; } else if (res.status === 'down') { badgeText = '🔻降价';
+                    badgeClass = 'down'; } else if (res.status === 'up') { badgeText = '🔺涨价';
+                    badgeClass = 'up'; } else { badgeText = '✅持平';
+                    badgeClass = 'equal'; }
+                if (statusEl) {
+                    statusEl.textContent = badgeText;
+                    statusEl.className = `row-status-badge status-badge ${badgeClass}`;
+                }
+
+                if (!keepSku && data.sku) {
+                    data.sku = '';
+                }
+                if (data.sku) {
+                    indexSpan.textContent = data.sku;
+                    indexSpan.className = 'row-index sku-name';
+                } else {
+                    indexSpan.textContent = index + 1;
+                    indexSpan.className = 'row-index';
+                }
+
+                if (index === selectedRowIndex) {
+                    updateGoldenPanel();
+                    updateProfitCalcPanel();
+                    updateQianchuanPanel();
+                }
+            }
+
+            // ===================================================================
+            //  主表渲染 - 只创建 DOM 结构，不调用 updateRowUI
+            // ===================================================================
+            function renderRow(index, data) {
+                const cost = data?.cost ?? 50;
+                const shipping = data?.shipping ?? 2;
+                const profitRate = data?.profitRate ?? 40;
+                const targetPrice = data?.targetPrice ?? 0;
+                const basePrice = data?.basePrice ?? 0;
+
+                const tr = document.createElement('tr');
+                tr.className = 'row-enter';
+                tr.dataset.index = index;
+
+                tr.addEventListener('click', function(e) {
+                    if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return;
+                    const idx = parseInt(this.dataset.index);
+                    if (!isNaN(idx) && idx !== selectedRowIndex) {
+                        selectedRowIndex = idx;
+                        updateSelectedRow();
+                        clearMatchState();
+                    }
+                });
+
+                const tdIndex = document.createElement('td');
+                tdIndex.innerHTML = `<span class="row-index">${index + 1}</span>`;
+                tr.appendChild(tdIndex);
+
+                const tdCost = document.createElement('td');
+                tdCost.innerHTML = `
+                    <div class="input-wrap">
+                        <span class="sym">¥</span>
+                        <input type="number" class="input-field cost-input" value="${cost}" step="0.01" min="0" />
+                    </div>
+                `;
+                tr.appendChild(tdCost);
+
+                const tdShip = document.createElement('td');
+                tdShip.innerHTML = `
+                    <div class="input-wrap">
+                        <span class="sym">¥</span>
+                        <input type="number" class="input-field ship-input" value="${shipping}" step="0.01" min="0" />
+                    </div>
+                `;
+                tr.appendChild(tdShip);
+
+                const tdProfit = document.createElement('td');
+                tdProfit.innerHTML = `
+                    <div class="input-wrap">
+                        <span class="sym">%</span>
+                        <input type="number" class="input-field profit-input" value="${profitRate}" step="0.1" min="0" max="100" />
+                    </div>
+                `;
+                tr.appendChild(tdProfit);
+
+                const tdTotal = document.createElement('td');
+                tdTotal.className = 'result-td';
+                tdTotal.innerHTML = `<span class="result-value"><span class="currency">¥</span>—</span>`;
+                tr.appendChild(tdTotal);
+
+                const tdBase = document.createElement('td');
+                tdBase.innerHTML = `
+                    <div class="input-wrap">
+                        <span class="sym">¥</span>
+                        <input type="number" class="input-field base-price-input" value="${basePrice || ''}" step="0.01" min="0" />
+                    </div>
+                `;
+                tdBase.className = 'result-td';
+                tr.appendChild(tdBase);
+
+                const tdTarget = document.createElement('td');
+                tdTarget.innerHTML = `
+                    <div class="input-wrap">
+                        <span class="sym">¥</span>
+                        <input type="number" class="input-field target-price-input" value="${targetPrice || ''}" step="0.01" min="0" />
+                    </div>
+                `;
+                tdTarget.className = 'result-td';
+                tr.appendChild(tdTarget);
+
+                const tdProfitAmt = document.createElement('td');
+                tdProfitAmt.className = 'result-td';
+                tdProfitAmt.innerHTML = `<span class="result-value"><span class="currency">¥</span>—</span>`;
+                tr.appendChild(tdProfitAmt);
+
+                const tdBreakEven = document.createElement('td');
+                tdBreakEven.className = 'result-td';
+                tdBreakEven.innerHTML = `<span class="result-value break-even-roi invalid">—</span>`;
+                tr.appendChild(tdBreakEven);
+
+                const tdFold = document.createElement('td');
+                tdFold.className = 'result-td';
+                tdFold.innerHTML = `<span class="result-value discount-fold">—</span>`;
+                tr.appendChild(tdFold);
+
+                const tdAction = document.createElement('td');
+                tdAction.innerHTML = `
+                    <button class="btn-profit profit-btn" data-index="${index}">📈 盈亏</button>
+                    <button class="btn-golden golden-btn" data-index="${index}">🏆 投产</button>
+                    <button class="btn-profit-calc profit-calc-btn" data-index="${index}">💰 利润</button>
+                    <button class="btn-qianchuan qianchuan-btn" data-index="${index}">📢 千川</button>
+                    <button class="btn-icon del-row" title="删除此行" data-index="${index}">✕</button>
+                `;
+                tr.appendChild(tdAction);
+
+                const costInput = tr.querySelector('.cost-input');
+                const shipInput = tr.querySelector('.ship-input');
+                const profitInput = tr.querySelector('.profit-input');
+                const baseInput = tr.querySelector('.base-price-input');
+                const targetInput = tr.querySelector('.target-price-input');
+
+                costInput.addEventListener('input', function() {
+                    const idx = parseInt(tr.dataset.index);
+                    if (rowsData[idx]) {
+                        rowsData[idx].sku = '';
+                        rowsData[idx]._triggerProfit = true;
+                        rowsData[idx]._lastTrigger = 'profitRate';
+                    }
+                    updateRowUI(idx, false);
+                });
+
+                shipInput.addEventListener('input', function() {
+                    const idx = parseInt(tr.dataset.index);
+                    if (rowsData[idx]) {
+                        rowsData[idx]._triggerProfit = true;
+                        rowsData[idx]._lastTrigger = 'profitRate';
+                    }
+                    updateRowUI(idx, true);
+                });
+
+                profitInput.addEventListener('input', function() {
+                    const idx = parseInt(tr.dataset.index);
+                    if (rowsData[idx]) {
+                        rowsData[idx]._triggerProfit = true;
+                        rowsData[idx]._lastTrigger = 'profitRate';
+                    }
+                    updateRowUI(idx, true);
+                });
+
+                baseInput.addEventListener('input', function() {
+                    const idx = parseInt(tr.dataset.index);
+                    if (rowsData[idx]) {
+                        rowsData[idx]._triggerBase = true;
+                        rowsData[idx]._lastTrigger = 'basePrice';
+                    }
+                    updateRowUI(idx, true);
+                });
+
+                targetInput.addEventListener('input', function() {
+                    const idx = parseInt(tr.dataset.index);
+                    if (rowsData[idx]) {
+                        rowsData[idx]._triggerTarget = true;
+                        rowsData[idx]._lastTrigger = 'targetPrice';
+                    }
+                    updateRowUI(idx, true);
+                });
+
+                [costInput, shipInput, profitInput, baseInput, targetInput].forEach(inp => {
+                    inp.addEventListener('blur', function() {
+                        let v = parseFloat(this.value);
+                        if (isNaN(v) || v < 0) v = 0;
+                        if (this.classList.contains('profit-input') && v > 100) v = 100;
+                        this.value = v;
+                        const idx = parseInt(tr.dataset.index);
+                        if (this.classList.contains('profit-input')) {
+                            if (rowsData[idx]) { rowsData[idx]._triggerProfit = true;
+                                rowsData[idx]._lastTrigger = 'profitRate'; }
+                        } else if (this.classList.contains('base-price-input')) {
+                            if (rowsData[idx]) { rowsData[idx]._triggerBase = true;
+                                rowsData[idx]._lastTrigger = 'basePrice'; }
+                        } else if (this.classList.contains('target-price-input')) {
+                            if (rowsData[idx]) { rowsData[idx]._triggerTarget = true;
+                                rowsData[idx]._lastTrigger = 'targetPrice'; }
+                        }
+                        const keep = this.classList.contains('cost-input') ? false : true;
+                        updateRowUI(idx, keep);
+                    });
+                });
+
+                const delBtn = tr.querySelector('.del-row');
+                delBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const idx = parseInt(this.dataset.index);
+                    deleteRow(idx);
+                });
+
+                const profitBtn = tr.querySelector('.profit-btn');
+                profitBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const idx = parseInt(this.dataset.index);
+                    selectedRowIndex = idx;
+                    updateSelectedRow();
+                    importToProfitCalculator(idx);
+                });
+
+                const goldenBtn = tr.querySelector('.golden-btn');
+                goldenBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const idx = parseInt(this.dataset.index);
+                    selectedRowIndex = idx;
+                    updateSelectedRow();
+                    showGoldenPanel();
+                });
+
+                const profitCalcBtn = tr.querySelector('.profit-calc-btn');
+                profitCalcBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const idx = parseInt(this.dataset.index);
+                    selectedRowIndex = idx;
+                    updateSelectedRow();
+                    showProfitCalcPanel();
+                });
+
+                const qianchuanBtn = tr.querySelector('.qianchuan-btn');
+                qianchuanBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const idx = parseInt(this.dataset.index);
+                    selectedRowIndex = idx;
+                    updateSelectedRow();
+                    showQianchuanPanel();
+                });
+
+                if (data) {
+                    data._lastTrigger = 'profitRate';
+                    data._triggerProfit = true;
+                }
+                // 不在这里调用 updateRowUI，由调用方在追加到 DOM 后调用
+                return tr;
+            }
+
+            // ===================================================================
+            //  全量渲染
+            // ===================================================================
+            function renderAll() {
+                tbody.innerHTML = '';
+                if (rowsData.length === 0) {
+                    const tr = document.createElement('tr');
+                    tr.className = 'empty-row';
+                    const td = document.createElement('td');
+                    td.colSpan = 11;
+                    td.textContent = '还没有产品，点击下方「添加产品」开始定价 📦';
+                    tr.appendChild(td);
+                    tbody.appendChild(tr);
+                    rowCountDisplay.textContent = '共 0 个产品';
+                    updateSelectedRow();
+                    return;
+                }
+                rowsData.forEach((data, idx) => {
+                    const tr = renderRow(idx, data);
+                    tbody.appendChild(tr);
+                    // 追加后立即更新该行
+                    updateRowUI(idx, true);
+                });
+                rowCountDisplay.textContent = `共 ${rowsData.length} 个产品`;
+                // 重新绑定所有按钮（因为 renderRow 中已经绑定了，但全量重建后需要重新绑定）
+                // 实际上 renderRow 中绑定的监听器是直接挂载在元素上的，所以不需要额外绑定
+                updateSelectedRow();
+            }
+
+            // ===================================================================
+            //  增量添加 - 核心修改：不调用 renderAll，只添加新行
+            // ===================================================================
+            function addRow(cost, shipping, profitRate) {
+                const defaultData = {
+                    cost: cost ?? 50,
+                    shipping: shipping ?? 2,
+                    profitRate: profitRate ?? 40,
+                    sku: '',
+                    totalCost: 0,
+                    basePrice: 0,
+                    targetPrice: 0,
+                    profitAmount: 0,
+                    breakEvenROI: Infinity,
+                    _lastTrigger: 'profitRate',
+                    _triggerProfit: true,
+                    _triggerBase: false,
+                    _triggerTarget: false
+                };
+                const newIndex = rowsData.length;
+                rowsData.push(defaultData);
+
+                // 移除空行占位
+                const emptyRow = tbody.querySelector('.empty-row');
+                if (emptyRow) emptyRow.remove();
+
+                // 创建新行并追加
+                const tr = renderRow(newIndex, defaultData);
+                tbody.appendChild(tr);
+
+                // 更新新行的内容
+                updateRowUI(newIndex, true);
+
+                rowCountDisplay.textContent = `共 ${rowsData.length} 个产品`;
+                selectedRowIndex = newIndex;
+                updateSelectedRow();
+
+                tr.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                tr.classList.add('highlight-flash');
+                setTimeout(() => tr.classList.remove('highlight-flash'), 400);
+                clearMatchState();
+            }
+
+            function deleteRow(index) {
+                rowsData.splice(index, 1);
+                if (selectedRowIndex === index) selectedRowIndex = -1;
+                else if (selectedRowIndex > index) selectedRowIndex--;
+                // 删除后全量渲染，保证索引一致
+                renderAll();
+                clearMatchState();
+            }
+
+            function updateSelectedRow() {
+                document.querySelectorAll('#tableBody tr').forEach(tr => tr.classList.remove('selected'));
+                if (selectedRowIndex >= 0 && selectedRowIndex < rowsData.length) {
+                    const rows = tbody.querySelectorAll('tr');
+                    if (rows[selectedRowIndex]) {
+                        rows[selectedRowIndex].classList.add('selected');
+                    }
+                }
+                const hasSkuData = skuMap.size > 0;
+                const hasSelected = selectedRowIndex >= 0 && selectedRowIndex < rowsData.length;
+                const hasMatched = currentMatchedSku !== null;
+                skuFillBtn.disabled = !(hasSkuData && hasSelected && hasMatched);
+                updateGoldenPanel();
+                updateProfitCalcPanel();
+                updateQianchuanPanel();
+            }
+
+            // ===================================================================
+            //  SKU 搜索
+            // ===================================================================
+            function clearMatchState() {
+                currentMatchedSku = null;
+                currentMatchedCost = null;
+                skuMatchResult.innerHTML = `<span class="hint">匹配结果</span>`;
+                skuFillBtn.disabled = true;
+            }
+
+            function updateSkuSuggestions(query) {
+                skuSuggestions.innerHTML = '';
+                if (!query || query.length === 0) {
+                    const keys = Array.from(skuMap.keys()).slice(0, 20);
+                    keys.forEach(key => {
+                        const opt = document.createElement('option');
+                        opt.value = key;
+                        skuSuggestions.appendChild(opt);
+                    });
+                    return;
+                }
+                const lowerQuery = query.toLowerCase();
+                const matches = [];
+                for (const key of skuMap.keys()) {
+                    if (key.toLowerCase().includes(lowerQuery)) {
+                        matches.push(key);
+                        if (matches.length >= 30) break;
+                    }
+                }
+                matches.forEach(key => {
+                    const opt = document.createElement('option');
+                    opt.value = key;
+                    skuSuggestions.appendChild(opt);
+                });
+            }
+
+            function performSkuSearch() {
+                const query = skuSearchInput.value.trim();
+                if (!query) {
+                    clearMatchState();
+                    updateSkuSuggestions('');
+                    return;
+                }
+                updateSkuSuggestions(query);
+
+                let matchedKey = null,
+                    matchedCost = null;
+                for (const [key, value] of skuMap) {
+                    if (key.toLowerCase() === query.toLowerCase()) {
+                        matchedKey = key;
+                        matchedCost = value;
+                        break;
+                    }
+                }
+
+                if (matchedKey !== null) {
+                    currentMatchedSku = matchedKey;
+                    currentMatchedCost = matchedCost;
+                    skuMatchResult.innerHTML = `<span class="matched">✅ ${matchedKey} → ¥${fmt(matchedCost)}</span>`;
+                    if (selectedRowIndex >= 0 && selectedRowIndex < rowsData.length) {
+                        autoFillSelectedRow(matchedCost);
+                    }
+                    skuFillBtn.disabled = false;
+                    return;
+                }
+
+                let partialMatches = [];
+                for (const [key, value] of skuMap) {
+                    if (key.toLowerCase().includes(query.toLowerCase())) {
+                        partialMatches.push({ sku: key, cost: value });
+                    }
+                }
+                if (partialMatches.length === 1) {
+                    const match = partialMatches[0];
+                    currentMatchedSku = match.sku;
+                    currentMatchedCost = match.cost;
+                    skuMatchResult.innerHTML = `<span class="matched">✅ ${match.sku} → ¥${fmt(match.cost)}</span>`;
+                    if (selectedRowIndex >= 0 && selectedRowIndex < rowsData.length) {
+                        autoFillSelectedRow(match.cost);
+                    }
+                    skuFillBtn.disabled = false;
+                } else if (partialMatches.length > 1) {
+                    skuMatchResult.innerHTML =
+                        `<span class="hint">找到 ${partialMatches.length} 个匹配，请从下拉列表选择</span>`;
+                    currentMatchedSku = null;
+                    currentMatchedCost = null;
+                    skuFillBtn.disabled = true;
+                } else {
+                    skuMatchResult.innerHTML = `<span class="not-found">❌ 未找到该SKU</span>`;
+                    currentMatchedSku = null;
+                    currentMatchedCost = null;
+                    skuFillBtn.disabled = true;
+                }
+            }
+
+            function autoFillSelectedRow(cost) {
+                if (selectedRowIndex < 0 || selectedRowIndex >= rowsData.length) {
+                    if (rowsData.length > 0) {
+                        selectedRowIndex = 0;
+                        updateSelectedRow();
+                    } else {
+                        return;
+                    }
+                }
+                const idx = selectedRowIndex;
+                rowsData[idx].cost = cost;
+                rowsData[idx].sku = currentMatchedSku || '';
+                rowsData[idx]._triggerProfit = true;
+                rowsData[idx]._lastTrigger = 'profitRate';
+
+                const tr = tbody.querySelector(`tr[data-index="${idx}"]`);
+                if (tr) {
+                    const costInput = tr.querySelector('.cost-input');
+                    if (costInput) costInput.value = cost;
+                }
+
+                updateRowUI(idx, true);
+                if (tr) {
+                    tr.classList.add('fill-flash');
+                    setTimeout(() => tr.classList.remove('fill-flash'), 500);
+                }
+            }
+
+            // ===================================================================
+            //  文件上传（保持不变）
+            // ===================================================================
+            function handleFile(file) {
+                const reader = new FileReader();
+                const ext = file.name.split('.').pop().toLowerCase();
+                if (ext === 'csv') {
+                    reader.onload = function(e) { parseCSV(e.target.result); };
+                    reader.readAsText(file);
+                } else if (ext === 'xlsx' || ext === 'xls') {
+                    reader.onload = function(e) {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                        const json = XLSX.utils.sheet_to_json(firstSheet, { defval: '' });
+                        parseExcelJSON(json);
+                    };
+                    reader.readAsArrayBuffer(file);
+                } else {
+                    alert('不支持的文件格式，请上传 .csv, .xlsx 或 .xls 文件');
+                }
+            }
+
+            function parseCSV(text) {
+                const lines = text.split(/\r?\n/).filter(line => line.trim() !== '');
+                if (lines.length === 0) { alert('CSV文件为空'); return; }
+                let delimiter = ',';
+                if (lines[0].includes('\t')) delimiter = '\t';
+                if (lines[0].includes(';')) delimiter = ';';
+                const headers = lines[0].split(delimiter).map(h => h.trim().toLowerCase());
+                let skuIdx = -1,
+                    costIdx = -1;
+                const skuKeywords = ['sku', '编号', '货号', '商品编号', 'product', 'code', 'item'];
+                const costKeywords = ['成本', '单价', '价格', 'cost', 'price', '单位成本'];
+                headers.forEach((h, i) => {
+                    const hLower = h.toLowerCase();
+                    if (skuKeywords.some(k => hLower.includes(k))) skuIdx = i;
+                    if (costKeywords.some(k => hLower.includes(k))) costIdx = i;
+                });
+                if (skuIdx === -1 && headers.length >= 1) skuIdx = 0;
+                if (costIdx === -1 && headers.length >= 2) costIdx = 1;
+                if (skuIdx === -1 || costIdx === -1) {
+                    alert('无法识别SKU和成本列，请确保表格包含"SKU"和"成本"列');
+                    return;
+                }
+                const newMap = new Map();
+                for (let i = 1; i < lines.length; i++) {
+                    const cols = lines[i].split(delimiter).map(c => c.trim());
+                    if (cols.length <= Math.max(skuIdx, costIdx)) continue;
+                    const sku = cols[skuIdx];
+                    const cost = parseFloat(cols[costIdx]);
+                    if (sku && !isNaN(cost) && cost >= 0) {
+                        newMap.set(sku, cost);
+                    }
+                }
+                if (newMap.size === 0) { alert('未能解析到有效数据，请检查文件格式'); return; }
+                skuMap = newMap;
+                skuCountEl.textContent = skuMap.size;
+                uploadStatus.innerHTML = `✅ 已加载: <span class="count">${skuMap.size}</span> 个SKU`;
+                clearMatchState();
+                skuSearchInput.placeholder = '输入SKU编号 (已加载 ' + skuMap.size + ' 个)';
+                updateSkuSuggestions('');
+                alert(`成功加载 ${skuMap.size} 个SKU成本数据！`);
+            }
+
+            function parseExcelJSON(json) {
+                if (!json || json.length === 0) { alert('Excel文件为空'); return; }
+                let skuKey = null,
+                    costKey = null;
+                const skuKeywords = ['sku', '编号', '货号', '商品编号', 'product', 'code', 'item'];
+                const costKeywords = ['成本', '单价', '价格', 'cost', 'price', '单位成本'];
+                Object.keys(json[0]).forEach(key => {
+                    const kLow = key.toLowerCase();
+                    if (skuKeywords.some(k => kLow.includes(k))) skuKey = key;
+                    if (costKeywords.some(k => kLow.includes(k))) costKey = key;
+                });
+                if (!skuKey || !costKey) {
+                    const keys = Object.keys(json[0]);
+                    if (keys.length >= 2) { skuKey = keys[0];
+                        costKey = keys[1]; } else { alert('无法识别SKU和成本列'); return; }
+                }
+                const newMap = new Map();
+                json.forEach(row => {
+                    const sku = String(row[skuKey] || '').trim();
+                    const cost = parseFloat(row[costKey]);
+                    if (sku && !isNaN(cost) && cost >= 0) {
+                        newMap.set(sku, cost);
+                    }
+                });
+                if (newMap.size === 0) { alert('未能解析到有效数据'); return; }
+                skuMap = newMap;
+                skuCountEl.textContent = skuMap.size;
+                uploadStatus.innerHTML = `✅ 已加载: <span class="count">${skuMap.size}</span> 个SKU`;
+                clearMatchState();
+                skuSearchInput.placeholder = '输入SKU编号 (已加载 ' + skuMap.size + ' 个)';
+                updateSkuSuggestions('');
+                alert(`成功加载 ${skuMap.size} 个SKU成本数据！`);
+            }
+
+            // ===================================================================
+            //  盈亏计算器（保持不变）
+            // ===================================================================
+            function calcProfitRow(price, cost, actualROI, refunds, orders, platformFee, shippingInsurance) {
+                const profit = price - cost;
+                const grossMargin = price > 0 ? (profit / price) * 100 : 0;
+                const breakEvenROI = profit > 0 ? price / profit : 0;
+
+                let netProfitRate = 0,
+                    grossProfitPerOrder = 0,
+                    costPerOrder = 0,
+                    totalProfit = 0,
+                    netProfit = 0,
+                    netProfitMargin = 0;
+
+                if (actualROI > 0 && price > 0) {
+                    grossProfitPerOrder = price - cost - (price / actualROI);
+                    netProfitRate = (grossProfitPerOrder / price) * 100;
+                    costPerOrder = price / actualROI;
+                    totalProfit = orders * grossProfitPerOrder;
+
+                    const validOrders = orders - refunds;
+                    const validSales = price * validOrders;
+                    const totalCost = cost * validOrders;
+                    const totalPlatformFee = price * orders * (platformFee / 100);
+                    const totalShippingInsurance = shippingInsurance * orders;
+                    const totalAdCost = (price / actualROI) * orders;
+
+                    netProfit = validSales - totalCost - totalPlatformFee - totalShippingInsurance - totalAdCost;
+                    if (validSales > 0) {
+                        netProfitMargin = (netProfit / validSales) * 100;
+                    }
+                }
+
+                return {
+                    profit,
+                    grossMargin,
+                    breakEvenROI,
+                    netProfitRate,
+                    grossProfitPerOrder,
+                    costPerOrder,
+                    totalProfit,
+                    netProfit,
+                    netProfitMargin
+                };
+            }
+
+            function getBreakEvenROI(price, cost) {
+                const profit = price - cost;
+                if (profit > 0 && price > 0) {
+                    return price / profit;
+                }
+                return 0;
+            }
+
+            function renderProfitRow(index, data) {
+                const tr = document.createElement('tr');
+                tr.className = 'row-enter';
+                tr.dataset.pindex = index;
+
+                const tdSku = document.createElement('td');
+                const skuDisplay = data.sku || '未命名';
+                tdSku.innerHTML = `<span class="profit-sku-name ${data.sku ? '' : 'empty'}">${skuDisplay}</span>`;
+                tdSku.style.minWidth = '80px';
+                tr.appendChild(tdSku);
+
+                const tdPrice = document.createElement('td');
+                tdPrice.innerHTML =
+                `<input type="number" step="0.01" class="profit-input p-price" value="${data.price || 0}" />`;
+                tr.appendChild(tdPrice);
+
+                const tdCost = document.createElement('td');
+                tdCost.innerHTML =
+                `<input type="number" step="0.01" class="profit-input p-cost" value="${data.cost || 0}" />`;
+                tr.appendChild(tdCost);
+
+                const tdProfit = document.createElement('td');
+                tdProfit.innerHTML = `<span class="profit-result p-profit">0.00</span>`;
+                tr.appendChild(tdProfit);
+
+                const tdGross = document.createElement('td');
+                tdGross.innerHTML = `<span class="profit-result p-gross">0.00%</span>`;
+                tr.appendChild(tdGross);
+
+                const tdBreak = document.createElement('td');
+                tdBreak.innerHTML = `<span class="profit-result p-break">0.000</span>`;
+                tr.appendChild(tdBreak);
+
+                const tdROI = document.createElement('td');
+                const roiVal = data.actualROI && data.actualROI > 0 ? data.actualROI : '';
+                tdROI.innerHTML = `<input type="number" step="0.01" class="profit-input p-roi" value="${roiVal}" />`;
+                tr.appendChild(tdROI);
+
+                const tdNetRate = document.createElement('td');
+                tdNetRate.innerHTML = `<span class="profit-result p-netrate">0.00%</span>`;
+                tr.appendChild(tdNetRate);
+
+                const tdGrossProfit = document.createElement('td');
+                tdGrossProfit.innerHTML = `<span class="profit-result p-grossprofit">0.00</span>`;
+                tr.appendChild(tdGrossProfit);
+
+                const tdCostPer = document.createElement('td');
+                tdCostPer.innerHTML = `<span class="profit-result p-costper">0.00</span>`;
+                tr.appendChild(tdCostPer);
+
+                const tdRefunds = document.createElement('td');
+                tdRefunds.innerHTML =
+                    `<input type="number" step="1" class="profit-input p-refunds" value="${data.refunds || 10}" />`;
+                tr.appendChild(tdRefunds);
+
+                const tdOrders = document.createElement('td');
+                tdOrders.innerHTML =
+                    `<input type="number" step="1" class="profit-input p-orders" value="${data.orders || 100}" />`;
+                tr.appendChild(tdOrders);
+
+                const tdTotalProfit = document.createElement('td');
+                tdTotalProfit.innerHTML = `<span class="profit-result p-totalprofit">0.00</span>`;
+                tr.appendChild(tdTotalProfit);
+
+                const tdNetProfit = document.createElement('td');
+                tdNetProfit.innerHTML = `<span class="profit-result p-netprofit">0.00</span>`;
+                tr.appendChild(tdNetProfit);
+
+                const tdNetMargin = document.createElement('td');
+                tdNetMargin.innerHTML = `<span class="profit-result p-netmargin">0.00%</span>`;
+                tr.appendChild(tdNetMargin);
+
+                const tdFee = document.createElement('td');
+                tdFee.innerHTML =
+                    `<input type="number" step="0.01" class="profit-input p-fee" value="${data.platformFee || 0.6}" />`;
+                tr.appendChild(tdFee);
+
+                const tdIns = document.createElement('td');
+                tdIns.innerHTML =
+                    `<input type="number" step="0.01" class="profit-input p-ins" value="${data.shippingInsurance || 0}" />`;
+                tr.appendChild(tdIns);
+
+                const tdDel = document.createElement('td');
+                tdDel.innerHTML = `<button class="btn-profit-del profit-del-btn" data-pindex="${index}">✕</button>`;
+                tr.appendChild(tdDel);
+
+                const inputs = tr.querySelectorAll('.profit-input');
+                inputs.forEach(inp => {
+                    inp.addEventListener('input', function() {
+                        const idx = parseInt(tr.dataset.pindex);
+                        updateProfitRowUI(idx);
+                    });
+                    inp.addEventListener('blur', function() {
+                        let v = parseFloat(this.value);
+                        if (isNaN(v) || v < 0) v = 0;
+                        this.value = v;
+                        const idx = parseInt(tr.dataset.pindex);
+                        updateProfitRowUI(idx);
+                    });
+                });
+
+                const delBtn = tr.querySelector('.profit-del-btn');
+                delBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const idx = parseInt(this.dataset.pindex);
+                    deleteProfitRow(idx);
+                });
+
+                return tr;
+            }
+
+            function updateProfitRowUI(index) {
+                if (index < 0 || index >= profitData.length) return;
+                const data = profitData[index];
+                const tr = profitBody.querySelector(`tr[data-pindex="${index}"]`);
+                if (!tr) return;
+
+                const price = parseFloat(tr.querySelector('.p-price').value) || 0;
+                const cost = parseFloat(tr.querySelector('.p-cost').value) || 0;
+
+                const roiInput = tr.querySelector('.p-roi');
+                let roiVal = roiInput.value.trim();
+                let actualROI;
+                const breakEvenROI = getBreakEvenROI(price, cost);
+
+                if (roiVal === '') {
+                    actualROI = breakEvenROI > 0 ? breakEvenROI * 1.5 : 0;
+                    roiInput.value = actualROI;
+                } else {
+                    actualROI = parseFloat(roiVal) || 0;
+                }
+
+                if (isNaN(actualROI) || actualROI < 0) {
+                    actualROI = breakEvenROI > 0 ? breakEvenROI * 1.5 : 0;
+                    roiInput.value = actualROI;
+                }
+
+                const refunds = parseInt(tr.querySelector('.p-refunds').value) || 0;
+                const orders = parseInt(tr.querySelector('.p-orders').value) || 0;
+                const platformFee = parseFloat(tr.querySelector('.p-fee').value) || 0;
+                const shippingInsurance = parseFloat(tr.querySelector('.p-ins').value) || 0;
+
+                data.price = price;
+                data.cost = cost;
+                data.actualROI = actualROI;
+                data.refunds = refunds;
+                data.orders = orders;
+                data.platformFee = platformFee;
+                data.shippingInsurance = shippingInsurance;
+
+                const res = calcProfitRow(price, cost, actualROI, refunds, orders, platformFee, shippingInsurance);
+
+                tr.querySelector('.p-profit').textContent = fmt(res.profit);
+                tr.querySelector('.p-gross').textContent = fmt(res.grossMargin) + '%';
+                tr.querySelector('.p-break').textContent = fmt(res.breakEvenROI);
+                tr.querySelector('.p-netrate').textContent = fmt(res.netProfitRate) + '%';
+                tr.querySelector('.p-grossprofit').textContent = fmt(res.grossProfitPerOrder);
+                tr.querySelector('.p-costper').textContent = fmt(res.costPerOrder);
+                tr.querySelector('.p-totalprofit').textContent = fmt(res.totalProfit);
+
+                const netProfitEl = tr.querySelector('.p-netprofit');
+                netProfitEl.textContent = fmt(res.netProfit);
+                const netMarginEl = tr.querySelector('.p-netmargin');
+                netMarginEl.textContent = fmt(res.netProfitMargin) + '%';
+
+                if (res.netProfit < 0) {
+                    netProfitEl.classList.add('negative');
+                    netMarginEl.classList.add('negative');
+                } else {
+                    netProfitEl.classList.remove('negative');
+                    netMarginEl.classList.remove('negative');
+                }
+
+                const skuEl = tr.querySelector('.profit-sku-name');
+                if (skuEl) {
+                    skuEl.textContent = data.sku || '未命名';
+                    if (data.sku) {
+                        skuEl.className = 'profit-sku-name';
+                    } else {
+                        skuEl.className = 'profit-sku-name empty';
+                    }
+                }
+            }
+
+            function renderAllProfit() {
+                profitBody.innerHTML = '';
+                if (profitData.length === 0) {
+                    const tr = document.createElement('tr');
+                    tr.className = 'empty-row';
+                    const td = document.createElement('td');
+                    td.colSpan = 18;
+                    td.textContent = '暂无数据，点击主表「盈亏」导入，或点击「添加行」手动输入';
+                    tr.appendChild(td);
+                    profitBody.appendChild(tr);
+                    profitCount.textContent = '0';
+                    return;
+                }
+                profitData.forEach((data, idx) => {
+                    const tr = renderProfitRow(idx, data);
+                    profitBody.appendChild(tr);
+                });
+                profitCount.textContent = profitData.length;
+
+                document.querySelectorAll('.profit-del-btn').forEach(btn => {
+                    const idx = parseInt(btn.dataset.pindex);
+                    btn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        deleteProfitRow(idx);
+                    });
+                });
+
+                profitData.forEach((_, idx) => {
+                    updateProfitRowUI(idx);
+                });
+            }
+
+            function addProfitRow(sku, price, cost) {
+                const breakEvenROI = getBreakEvenROI(price || 0, cost || 0);
+                const defaultROI = breakEvenROI > 0 ? breakEvenROI * 1.5 : 0;
+
+                const newRow = {
+                    sku: sku || '',
+                    price: price || 0,
+                    cost: cost || 0,
+                    actualROI: defaultROI,
+                    refunds: 10,
+                    orders: 100,
+                    platformFee: 0.6,
+                    shippingInsurance: 0
+                };
+                profitData.push(newRow);
+                renderAllProfit();
+                const lastTr = profitBody.lastElementChild;
+                if (lastTr) {
+                    lastTr.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+                profitPanel.classList.add('active');
+            }
+
+            function deleteProfitRow(index) {
+                if (profitData.length <= 0) return;
+                profitData.splice(index, 1);
+                renderAllProfit();
+            }
+
+            function resetProfitData() {
+                if (profitData.length === 0) return;
+                if (confirm('确定要清空所有盈亏数据吗？')) {
+                    profitData = [];
+                    renderAllProfit();
+                }
+            }
+
+            function importToProfitCalculator(index) {
+                const data = rowsData[index];
+                if (!data) return;
+                const tr = tbody.querySelector(`tr[data-index="${index}"]`);
+                if (!tr) return;
+                const resultTds = tr.querySelectorAll('.result-td');
+                if (resultTds.length < 6) return;
+
+                const totalCost = data.totalCost || 0;
+                const targetPrice = data.targetPrice || 0;
+                const sku = data.sku || `产品${index + 1}`;
+
+                let existingIdx = -1;
+                for (let i = 0; i < profitData.length; i++) {
+                    if (profitData[i].sku === sku) {
+                        existingIdx = i;
+                        break;
+                    }
+                }
+
+                if (existingIdx >= 0) {
+                    profitData[existingIdx].price = targetPrice || 0;
+                    profitData[existingIdx].cost = totalCost || 0;
+                    if (!profitData[existingIdx].actualROI || profitData[existingIdx].actualROI <= 0) {
+                        const breakEvenROI = getBreakEvenROI(targetPrice || 0, totalCost || 0);
+                        profitData[existingIdx].actualROI = breakEvenROI > 0 ? breakEvenROI * 1.5 : 0;
+                    }
+                    renderAllProfit();
+                    const rows = profitBody.querySelectorAll('tr');
+                    if (rows[existingIdx]) {
+                        rows[existingIdx].classList.add('highlight-flash');
+                        setTimeout(() => rows[existingIdx].classList.remove('highlight-flash'), 600);
+                    }
+                } else {
+                    addProfitRow(sku, targetPrice || 0, totalCost || 0);
+                }
+
+                profitPanel.classList.add('active');
+                setTimeout(() => {
+                    profitPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 100);
+            }
+
+            // ===================================================================
+            //  黄金投产计算器
+            // ===================================================================
+            function updateGoldenPanel() {
+                if (selectedRowIndex < 0 || selectedRowIndex >= rowsData.length) {
+                    goldenCurrentSku.value = '未选中';
+                    if (goldenBreakEven.dataset.locked !== 'true') {
+                        goldenBreakEven.value = 0;
+                    }
+                    goldenSettlement.value = 0;
+                    goldenFinalResult.textContent = '0.000000000';
+                    goldenCoefficient.value = '1.3';
+                    goldenProfitRadios.forEach(r => r.checked = r.value === 'above40');
+                    goldenBreakEvenTag.textContent = '自动';
+                    goldenBreakEvenTag.className = 'auto-tag';
+                    goldenBreakEven.classList.remove('manual-mode');
+                    return;
+                }
+
+                const data = rowsData[selectedRowIndex];
+                const tr = tbody.querySelector(`tr[data-index="${selectedRowIndex}"]`);
+                if (!tr) return;
+
+                const totalCost = data.totalCost || 0;
+                const targetPrice = data.targetPrice || 0;
+                const profitRate = data.profitRate || 0;
+                const sku = data.sku || `产品${selectedRowIndex + 1}`;
+                goldenCurrentSku.value = sku;
+
+                const profitAmount = targetPrice - totalCost;
+                let breakEven = 0;
+                if (profitAmount > 0 && targetPrice > 0) {
+                    breakEven = targetPrice / profitAmount;
+                }
+
+                if (goldenBreakEven.dataset.locked !== 'true') {
+                    goldenBreakEven.value = breakEven > 0 ? breakEven.toFixed(6) : 0;
+                    goldenBreakEvenTag.textContent = '自动';
+                    goldenBreakEvenTag.className = 'auto-tag';
+                    goldenBreakEven.classList.remove('manual-mode');
+                } else {
+                    goldenBreakEvenTag.textContent = '手动';
+                    goldenBreakEvenTag.className = 'manual-tag';
+                    goldenBreakEven.classList.add('manual-mode');
+                }
+
+                const breakEvenVal = parseFloat(goldenBreakEven.value) || 0;
+
+                const isAbove40 = profitRate > 40;
+                goldenProfitRadios.forEach(r => {
+                    r.checked = (r.value === 'above40' && isAbove40) || (r.value === 'below40' && !isAbove40);
+                });
+                const coefficient = isAbove40 ? 1.3 : 1.7;
+                goldenCoefficient.value = coefficient.toFixed(1);
+
+                let settlement = breakEvenVal * coefficient;
+                if (goldenSettlement.dataset.locked !== 'true') {
+                    goldenSettlement.value = settlement > 0 ? settlement.toFixed(6) : 0;
+                }
+
+                calculateGoldenResult();
+            }
+
+            function calculateGoldenResult() {
+                const settlement = parseFloat(goldenSettlement.value) || 0;
+                const orderRate = parseFloat(goldenOrderRate.value) || 0;
+                const refundExemption = parseFloat(goldenRefundExemption.value) || 0;
+
+                const osr = orderRate / 100;
+                const rer = refundExemption / 100;
+                const effectiveSettlementRate = osr + (1 - osr) * rer;
+
+                if (effectiveSettlementRate === 0 || settlement === 0) {
+                    goldenFinalResult.textContent = '0.000000000';
+                    return;
+                }
+
+                const finalResult = (settlement * 1.05) / effectiveSettlementRate;
+                goldenFinalResult.textContent = finalResult.toFixed(9);
+            }
+
+            function showGoldenPanel() {
+                goldenPanel.classList.add('active');
+                updateGoldenPanel();
+                setTimeout(() => {
+                    goldenPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 100);
+            }
+
+            function closeGoldenPanelFn() {
+                goldenPanel.classList.remove('active');
+            }
+
+            goldenBreakEven.addEventListener('input', function() {
+                this.dataset.locked = 'true';
+                goldenBreakEvenTag.textContent = '手动';
+                goldenBreakEvenTag.className = 'manual-tag';
+                this.classList.add('manual-mode');
+
+                const breakEvenVal = parseFloat(this.value) || 0;
+                const coefficient = parseFloat(goldenCoefficient.value) || 1.3;
+                if (goldenSettlement.dataset.locked !== 'true') {
+                    goldenSettlement.value = (breakEvenVal * coefficient).toFixed(6);
+                }
+                calculateGoldenResult();
+            });
+
+            goldenBreakEven.addEventListener('blur', function() {
+                let v = parseFloat(this.value);
+                if (isNaN(v) || v < 0) v = 0;
+                this.value = v;
+                const breakEvenVal = parseFloat(this.value) || 0;
+                const coefficient = parseFloat(goldenCoefficient.value) || 1.3;
+                if (goldenSettlement.dataset.locked !== 'true') {
+                    goldenSettlement.value = (breakEvenVal * coefficient).toFixed(6);
+                }
+                calculateGoldenResult();
+            });
+
+            // ===================================================================
+            //  爆款利润计算器
+            // ===================================================================
+            function updateProfitCalcPanel() {
+                if (selectedRowIndex < 0 || selectedRowIndex >= rowsData.length) {
+                    if (pcPrice.dataset.locked !== 'true') {
+                        pcPrice.value = 0;
+                    }
+                    pcCost.value = 0;
+                    calculateProfitCalc();
+                    pcPriceTag.textContent = '自动';
+                    pcPriceTag.className = 'auto-tag';
+                    pcPrice.classList.remove('manual-mode');
+                    return;
+                }
+
+                const data = rowsData[selectedRowIndex];
+                const targetPrice = data.targetPrice || 0;
+                const totalCost = data.totalCost || 0;
+
+                pcCost.value = totalCost || 0;
+
+                if (pcPrice.dataset.locked !== 'true') {
+                    pcPrice.value = targetPrice || 0;
+                    pcPriceTag.textContent = '自动';
+                    pcPriceTag.className = 'auto-tag';
+                    pcPrice.classList.remove('manual-mode');
+                } else {
+                    pcPriceTag.textContent = '手动';
+                    pcPriceTag.className = 'manual-tag';
+                    pcPrice.classList.add('manual-mode');
+                }
+
+                calculateProfitCalc();
+            }
+
+            function calculateProfitCalc() {
+                const price = parseFloat(pcPrice.value) || 0;
+                const cost = parseFloat(pcCost.value) || 0;
+                const shippingInsurance = parseFloat(pcShippingInsurance.value) || 0;
+                const settlement = parseFloat(pcSettlement.value) || 0;
+                const promotion = parseFloat(pcPromotion.value) || 0;
+
+                const platformFee = price * 0.006;
+                const totalCostPerOrder = cost + shippingInsurance + platformFee;
+                const profitPerOrder = price - totalCostPerOrder;
+
+                let grossProfit = 0;
+                if (price > 0) {
+                    grossProfit = (profitPerOrder / price) * settlement;
+                }
+
+                const estimatedProfit = grossProfit - promotion;
+
+                let roi = 0;
+                if (promotion > 0) {
+                    roi = settlement / promotion;
+                }
+
+                pcPlatformFee.textContent = platformFee.toFixed(2);
+                pcTotalCostPerOrder.textContent = totalCostPerOrder.toFixed(2);
+                pcProfitPerOrder.textContent = profitPerOrder.toFixed(2);
+                pcGrossProfit.textContent = grossProfit.toFixed(2);
+                pcROI.value = roi.toFixed(3);
+
+                const profitEl = pcEstimatedProfit;
+                profitEl.textContent = estimatedProfit.toFixed(2);
+                if (estimatedProfit >= 0) {
+                    profitEl.className = 'rvalue positive';
+                } else {
+                    profitEl.className = 'rvalue negative';
+                }
+            }
+
+            function showProfitCalcPanel() {
+                profitCalcPanel.classList.add('active');
+                updateProfitCalcPanel();
+                setTimeout(() => {
+                    profitCalcPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 100);
+            }
+
+            function closeProfitCalcPanelFn() {
+                profitCalcPanel.classList.remove('active');
+            }
+
+            pcPrice.addEventListener('input', function() {
+                const val = parseFloat(this.value);
+                if (val && val > 0) {
+                    this.dataset.locked = 'true';
+                    pcPriceTag.textContent = '手动';
+                    pcPriceTag.className = 'manual-tag';
+                    this.classList.add('manual-mode');
+                } else {
+                    this.dataset.locked = 'false';
+                    pcPriceTag.textContent = '自动';
+                    pcPriceTag.className = 'auto-tag';
+                    this.classList.remove('manual-mode');
+                    updateProfitCalcPanel();
+                    return;
+                }
+                calculateProfitCalc();
+            });
+
+            pcPrice.addEventListener('blur', function() {
+                let v = parseFloat(this.value);
+                if (isNaN(v) || v < 0) v = 0;
+                this.value = v;
+                if (v > 0) {
+                    this.dataset.locked = 'true';
+                    pcPriceTag.textContent = '手动';
+                    pcPriceTag.className = 'manual-tag';
+                    this.classList.add('manual-mode');
+                } else {
+                    this.dataset.locked = 'false';
+                    pcPriceTag.textContent = '自动';
+                    pcPriceTag.className = 'auto-tag';
+                    this.classList.remove('manual-mode');
+                    updateProfitCalcPanel();
+                    return;
+                }
+                calculateProfitCalc();
+            });
+
+            // ===================================================================
+            //  千川净成交出价计算器
+            // ===================================================================
+            function updateQianchuanPanel() {
+                if (selectedRowIndex < 0 || selectedRowIndex >= rowsData.length) {
+                    if (qcPrice.dataset.locked !== 'true') {
+                        qcPrice.value = 0;
+                    }
+                    qcCurrentSku.value = '未选中';
+                    qcMulti.innerText = '-';
+                    qcOut.innerText = '建议出价：-';
+                    qcPriceTag.textContent = '自动';
+                    qcPriceTag.className = 'auto-tag';
+                    qcPrice.classList.remove('manual-mode');
+                    return;
+                }
+
+                const data = rowsData[selectedRowIndex];
+                const targetPrice = data.targetPrice || 0;
+                const sku = data.sku || `产品${selectedRowIndex + 1}`;
+                qcCurrentSku.value = sku;
+
+                if (qcPrice.dataset.locked !== 'true') {
+                    qcPrice.value = targetPrice || 0;
+                    qcPriceTag.textContent = '自动';
+                    qcPriceTag.className = 'auto-tag';
+                    qcPrice.classList.remove('manual-mode');
+                } else {
+                    qcPriceTag.textContent = '手动';
+                    qcPriceTag.className = 'manual-tag';
+                    qcPrice.classList.add('manual-mode');
+                }
+
+                calculateQianchuan();
+            }
+
+            function calculateQianchuan() {
+                const price = parseFloat(qcPrice.value) || 0;
+                const rate = parseFloat(qcRate.value) || 0;
+
+                if (!price || !rate || rate <= 0) {
+                    qcMulti.innerText = '-';
+                    qcOut.innerText = '建议出价：-';
+                    return;
+                }
+
+                const refVal = Math.max(price, rate);
+                let minMul, maxMul;
+
+                if (refVal < 10) {
+                    minMul = 0.7;
+                    maxMul = 0.75;
+                } else if (refVal >= 10 && refVal <= 25) {
+                    minMul = 0.8;
+                    maxMul = 0.95;
+                } else if (refVal >= 26 && refVal <= 35) {
+                    minMul = 1.0;
+                    maxMul = 1.2;
+                } else if (refVal >= 36 && refVal <= 50) {
+                    minMul = 1.15;
+                    maxMul = 1.3;
+                } else {
+                    minMul = 1.4;
+                    maxMul = 1.5;
+                }
+
+                const base = 100 / rate;
+                const low = base * minMul;
+                const high = base * maxMul;
+
+                qcMulti.innerText = `${minMul} ~ ${maxMul}`;
+                qcOut.innerText = `建议出价：${low.toFixed(2)} ~ ${high.toFixed(2)}`;
+            }
+
+            function showQianchuanPanel() {
+                qianchuanPanel.classList.add('active');
+                updateQianchuanPanel();
+                setTimeout(() => {
+                    qianchuanPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 100);
+            }
+
+            function closeQianchuanPanelFn() {
+                qianchuanPanel.classList.remove('active');
+            }
+
+            qcPrice.addEventListener('input', function() {
+                const val = parseFloat(this.value);
+                if (val && val > 0) {
+                    this.dataset.locked = 'true';
+                    qcPriceTag.textContent = '手动';
+                    qcPriceTag.className = 'manual-tag';
+                    this.classList.add('manual-mode');
+                } else {
+                    this.dataset.locked = 'false';
+                    qcPriceTag.textContent = '自动';
+                    qcPriceTag.className = 'auto-tag';
+                    this.classList.remove('manual-mode');
+                    updateQianchuanPanel();
+                    return;
+                }
+                calculateQianchuan();
+            });
+
+            qcPrice.addEventListener('blur', function() {
+                let v = parseFloat(this.value);
+                if (isNaN(v) || v < 0) v = 0;
+                this.value = v;
+                if (v > 0) {
+                    this.dataset.locked = 'true';
+                    qcPriceTag.textContent = '手动';
+                    qcPriceTag.className = 'manual-tag';
+                    this.classList.add('manual-mode');
+                } else {
+                    this.dataset.locked = 'false';
+                    qcPriceTag.textContent = '自动';
+                    qcPriceTag.className = 'auto-tag';
+                    this.classList.remove('manual-mode');
+                    updateQianchuanPanel();
+                    return;
+                }
+                calculateQianchuan();
+            });
+
+            function closeProfitPanelFn() {
+                profitPanel.classList.remove('active');
+            }
+
+            // ===================================================================
+            //  初始化
+            // ===================================================================
+            function init() {
+                addRow(50, 2, 40);
+                addRow(80, 2, 35);
+                addRow(120, 2, 45);
+                selectedRowIndex = 0;
+                updateSelectedRow();
+
+                fileInput.addEventListener('change', function() {
+                    if (this.files && this.files.length > 0) {
+                        handleFile(this.files[0]);
+                    }
+                    this.value = '';
+                });
+                uploadBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    fileInput.click();
+                });
+
+                skuSearchInput.addEventListener('input', function() {
+                    const val = this.value;
+                    if (!val.trim()) {
+                        clearMatchState();
+                        updateSkuSuggestions('');
+                        return;
+                    }
+                    performSkuSearch();
+                });
+
+                skuSearchInput.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (!skuFillBtn.disabled) {
+                            onFillClick();
+                        }
+                    }
+                });
+
+                skuFillBtn.addEventListener('click', onFillClick);
+
+                function onFillClick() {
+                    if (selectedRowIndex < 0 || selectedRowIndex >= rowsData.length) {
+                        alert('请先点击表格中的某一行选中它');
+                        return;
+                    }
+                    if (currentMatchedCost === null || currentMatchedSku === null) {
+                        alert('请先在搜索框中输入有效的SKU');
+                        return;
+                    }
+                    autoFillSelectedRow(currentMatchedCost);
+                    skuSearchInput.value = '';
+                    clearMatchState();
+                    updateSkuSuggestions('');
+                    skuSearchInput.focus();
+                }
+
+                addBtn.addEventListener('click', function() { addRow(); });
+
+                closeProfitBtn.addEventListener('click', closeProfitPanelFn);
+                addProfitRowBtn.addEventListener('click', function() {
+                    addProfitRow('', 0, 0);
+                });
+                resetProfitBtn.addEventListener('click', resetProfitData);
+
+                closeGoldenBtn.addEventListener('click', closeGoldenPanelFn);
+                goldenSettlement.addEventListener('input', function() {
+                    this.dataset.locked = 'true';
+                    calculateGoldenResult();
+                });
+                goldenOrderRate.addEventListener('input', calculateGoldenResult);
+                goldenRefundExemption.addEventListener('input', calculateGoldenResult);
+
+                closeProfitCalcBtn.addEventListener('click', closeProfitCalcPanelFn);
+                pcShippingInsurance.addEventListener('input', calculateProfitCalc);
+                pcSettlement.addEventListener('input', calculateProfitCalc);
+                pcPromotion.addEventListener('input', calculateProfitCalc);
+
+                closeQianchuanBtn.addEventListener('click', closeQianchuanPanelFn);
+                qcRate.addEventListener('input', calculateQianchuan);
+
+                updateGoldenPanel();
+                updateProfitCalcPanel();
+                updateQianchuanPanel();
+                renderAllProfit();
+            }
+
+            init();
+
+            window.__pricing = {
+                addRow,
+                deleteRow,
+                renderAll,
+                rowsData,
+                skuMap,
+                selectedRowIndex,
+                performSkuSearch,
+                autoFillSelectedRow,
+                updateSkuSuggestions,
+                updateRowUI,
+                importToProfitCalculator,
+                closeProfitPanelFn,
+                profitData,
+                addProfitRow,
+                deleteProfitRow,
+                resetProfitData,
+                renderAllProfit,
+                updateProfitRowUI,
+                updateGoldenPanel,
+                showGoldenPanel,
+                closeGoldenPanelFn,
+                calculateGoldenResult,
+                updateProfitCalcPanel,
+                showProfitCalcPanel,
+                closeProfitCalcPanelFn,
+                calculateProfitCalc,
+                updateQianchuanPanel,
+                showQianchuanPanel,
+                closeQianchuanPanelFn,
+                calculateQianchuan
+            };
+
+        })();
+    </script>
+
+</body>
+</html>
