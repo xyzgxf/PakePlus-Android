@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>拼多多爆款利润计算器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4 relative">
+    <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">拼多多爆款利润计算器</h1>
+        
+        <div class="space-y-5">
+            <!-- 第一行：售价 + 运费险 -->
+            <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-2">
+                    <label class="block text-lg font-medium text-gray-700 text-center">售价</label>
+                    <input type="number" id="price" value="30" step="0.01" class="w-full px-4 py-3 border-2 border-blue-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-blue-50 text-center text-xl font-medium">
+                </div>
+                <div class="space-y-2">
+                    <label class="block text-lg font-medium text-gray-700 text-center">运费险</label>
+                    <input type="number" id="shippingInsurance" value="0" step="0.01" class="w-full px-4 py-3 border-2 border-green-400 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 bg-green-50 text-center text-xl font-medium">
+                </div>
+            </div>
+            
+            <!-- 第二行：成本 + 实际投产 -->
+            <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-2">
+                    <label class="block text-lg font-medium text-gray-700 text-center">成本</label>
+                    <input type="number" id="cost" value="14.5" step="0.01" class="w-full px-4 py-3 border-2 border-red-400 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 bg-red-50 text-center text-xl font-medium">
+                </div>
+                <div class="space-y-2">
+                    <label class="block text-lg font-medium text-gray-700 text-center">实际投产</label>
+                    <input type="text" id="roi" readonly class="w-full px-4 py-3 border-2 border-gray-300 rounded-md bg-gray-100 text-center text-xl font-medium text-gray-700">
+                </div>
+            </div>
+            
+            <!-- 第三行：结算金额 + 推广花费 -->
+            <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-2">
+                    <label class="block text-lg font-medium text-gray-700 text-center">结算金额</label>
+                    <input type="number" id="settlementAmount" value="4175" step="0.01" class="w-full px-4 py-3 border-2 border-orange-400 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 bg-orange-50 text-center text-xl font-medium">
+                </div>
+                <div class="space-y-2">
+                    <label class="block text-lg font-medium text-gray-700 text-center">推广花费</label>
+                    <input type="number" id="promotionCost" value="1473" step="0.01" class="w-full px-4 py-3 border-2 border-purple-400 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-purple-50 text-center text-xl font-medium">
+                </div>
+            </div>
+            
+            <!-- 计算按钮 -->
+            <button id="calculateBtn" class="w-full bg-gray-800 hover:bg-gray-900 text-white font-bold py-4 px-4 rounded-md transition duration-200 shadow-md text-xl mt-6">
+                开始计算
+            </button>
+            
+            <!-- 结果区域 -->
+            <div class="mt-8 p-5 bg-green-50 border-2 border-green-300 rounded-md">
+                <h2 class="text-xl font-semibold text-green-800 mb-3 text-center">预估利润</h2>
+                <div id="profitResult" class="text-4xl font-bold text-green-600 text-center">
+                    0.00 元
+                </div>
+            </div>
+            
+            <!-- 详细信息 -->
+            <div class="mt-6 text-base text-gray-600 space-y-2 bg-gray-50 p-4 rounded-md">
+                <p class="flex justify-between">
+                    <span>平台手续费(0.6%):</span>
+                    <span id="platformFee" class="font-medium">0.00 元/单</span>
+                </p>
+                <p class="flex justify-between">
+                    <span>每单总成本:</span>
+                    <span id="totalCostPerOrder" class="font-medium">0.00 元/单</span>
+                </p>
+                <p class="flex justify-between">
+                    <span>每单利润:</span>
+                    <span id="profitPerOrder" class="font-medium">0.00 元/单</span>
+                </p>
+                <p class="flex justify-between">
+                    <span>总毛利:</span>
+                    <span id="grossProfit" class="font-medium">0.00 元</span>
+                </p>
+            </div>
+        </div>
+        
+        <div class="mt-8 text-sm text-gray-500 text-center">
+            注：平台手续费按售价的0.6%计算，实际投产=结算金额÷推广花费
+        </div>
+    </div>
+
+    <!-- 右下角作者信息 -->
+    <div class="fixed bottom-4 right-4 text-sm text-gray-500 bg-white px-3 py-1 rounded-md shadow-sm">
+        作者v:txp80290335
+    </div>
+
+    <script>
+        // 获取元素
+        const priceInput = document.getElementById('price');
+        const costInput = document.getElementById('cost');
+        const settlementAmountInput = document.getElementById('settlementAmount');
+        const shippingInsuranceInput = document.getElementById('shippingInsurance');
+        const promotionCostInput = document.getElementById('promotionCost');
+        const roiInput = document.getElementById('roi');
+        const profitResult = document.getElementById('profitResult');
+        const platformFeeSpan = document.getElementById('platformFee');
+        const totalCostPerOrderSpan = document.getElementById('totalCostPerOrder');
+        const profitPerOrderSpan = document.getElementById('profitPerOrder');
+        const grossProfitSpan = document.getElementById('grossProfit');
+        const calculateBtn = document.getElementById('calculateBtn');
+
+        // 计算函数
+        function calculateProfit() {
+            // 获取输入值
+            const price = parseFloat(priceInput.value) || 0;
+            const cost = parseFloat(costInput.value) || 0;
+            const settlementAmount = parseFloat(settlementAmountInput.value) || 0;
+            const shippingInsurance = parseFloat(shippingInsuranceInput.value) || 0;
+            const promotionCost = parseFloat(promotionCostInput.value) || 0;
+
+            // 计算平台手续费
+            const platformFee = price * 0.006;
+            
+            // 计算每单总成本
+            const totalCostPerOrder = cost + shippingInsurance + platformFee;
+            
+            // 计算每单利润
+            const profitPerOrder = price - totalCostPerOrder;
+            
+            // 计算总毛利
+            const grossProfit = (profitPerOrder / price) * settlementAmount;
+            
+            // 计算预估利润
+            const estimatedProfit = grossProfit - promotionCost;
+            
+            // 计算实际投产比 (结算金额 ÷ 推广花费)
+            let roi = 0;
+            if (promotionCost > 0) {
+                roi = settlementAmount / promotionCost;
+            }
+
+            // 更新显示
+            platformFeeSpan.textContent = platformFee.toFixed(2) + ' 元/单';
+            totalCostPerOrderSpan.textContent = totalCostPerOrder.toFixed(2) + ' 元/单';
+            profitPerOrderSpan.textContent = profitPerOrder.toFixed(2) + ' 元/单';
+            grossProfitSpan.textContent = grossProfit.toFixed(2) + ' 元';
+            roiInput.value = roi.toFixed(10); // 保留10位小数，与Excel一致
+            profitResult.textContent = estimatedProfit.toFixed(2) + ' 元';
+
+            // 根据利润正负改变颜色
+            if (estimatedProfit >= 0) {
+                profitResult.className = 'text-4xl font-bold text-green-600 text-center';
+            } else {
+                profitResult.className = 'text-4xl font-bold text-red-600 text-center';
+            }
+        }
+
+        // 绑定事件
+        calculateBtn.addEventListener('click', calculateProfit);
+        
+        // 页面加载时自动计算一次
+        window.addEventListener('load', calculateProfit);
+        
+        // 输入框变化时自动计算
+        const inputs = document.querySelectorAll('input[type="number"]');
+        inputs.forEach(input => {
+            input.addEventListener('input', calculateProfit);
+        });
+    </script>
+</body>
+</html>
