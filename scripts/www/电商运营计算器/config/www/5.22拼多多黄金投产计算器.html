@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>拼多多黄金投产比计算器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft YaHei", sans-serif;
+        }
+
+        body {
+            background-color: #f5f5f5;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .calculator {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 500px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .header {
+            background-color: #4472C4;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .form-group {
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .form-group:last-child {
+            border-bottom: none;
+        }
+
+        .label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 20px;
+            margin-top: 5px;
+        }
+
+        .radio-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+        }
+
+        input[type="radio"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #4472C4;
+            box-shadow: 0 0 0 2px rgba(68, 114, 196, 0.2);
+        }
+
+        .input-note {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .result-group {
+            background-color: #FFF2CC;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .result-label {
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .result-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #E67E22;
+            word-break: break-all;
+        }
+
+        .note {
+            padding: 15px 20px;
+            background-color: #f9f9f9;
+            font-size: 13px;
+            color: #666;
+            line-height: 1.5;
+        }
+
+        .note-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        .footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            font-size: 12px;
+            color: #999;
+            border-top: 1px solid #eee;
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator">
+        <div class="header">拼多多黄金投产比计算器</div>
+        
+        <div class="form-group">
+            <label class="label">毛利率区间</label>
+            <div class="radio-group">
+                <label class="radio-item">
+                    <input type="radio" name="profitRate" value="above40" checked>
+                    <span>毛利率 > 40%</span>
+                </label>
+                <label class="radio-item">
+                    <input type="radio" name="profitRate" value="below40">
+                    <span>毛利率 < 40%</span>
+                </label>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="label" for="breakEvenROI">保本投产</label>
+            <input type="number" id="breakEvenROI" step="0.01" placeholder="请输入保本投产比" value="1.38">
+        </div>
+
+        <div class="form-group">
+            <label class="label" for="settlementROI">结算投产</label>
+            <input type="number" id="settlementROI" step="0.001" placeholder="自动计算，可手动修改">
+            <div class="input-note">根据毛利率自动计算，如需调整可直接修改</div>
+        </div>
+
+        <div class="form-group">
+            <label class="label" for="orderSettlementRate">订单结算率 (%)</label>
+            <input type="number" id="orderSettlementRate" step="0.01" placeholder="请输入订单结算率" value="88">
+        </div>
+
+        <div class="form-group">
+            <label class="label" for="refundExemptionRate">退款豁免率 (%)</label>
+            <input type="number" id="refundExemptionRate" step="0.01" placeholder="请输入退款豁免率" value="45.63">
+            <div class="input-note">平台默认值通常为45.63%</div>
+        </div>
+
+        <div class="result-group">
+            <div class="result-label">最终设置值</div>
+            <div class="result-value" id="finalResult">1.978676471</div>
+        </div>
+
+        <div class="note">
+            <div class="note-title">使用说明</div>
+            <div>1. 选择对应的毛利率区间</div>
+            <div>2. 输入保本投产比，系统会自动计算结算投产</div>
+            <div>3. 输入实际的订单结算率和退款豁免率</div>
+            <div>4. 系统会实时计算出最终的投产比设置值</div>
+        </div>
+
+        <div class="footer">
+            <span>更新日期:2026-5-22</span>
+            <span>作者v:txp80290335</span>
+        </div>
+    </div>
+
+    <script>
+        // 获取所有元素
+        const profitRateRadios = document.querySelectorAll('input[name="profitRate"]');
+        const breakEvenROIInput = document.getElementById('breakEvenROI');
+        const settlementROIInput = document.getElementById('settlementROI');
+        const orderSettlementRateInput = document.getElementById('orderSettlementRate');
+        const refundExemptionRateInput = document.getElementById('refundExemptionRate');
+        const finalResultElement = document.getElementById('finalResult');
+
+        // 计算结算投产
+        function calculateSettlementROI() {
+            const breakEvenROI = parseFloat(breakEvenROIInput.value) || 0;
+            let coefficient = 1.3; // 默认>40%
+
+            // 获取选中的毛利率区间
+            profitRateRadios.forEach(radio => {
+                if (radio.checked) {
+                    coefficient = radio.value === 'above40' ? 1.3 : 1.7;
+                }
+            });
+
+            const settlementROI = breakEvenROI * coefficient;
+            settlementROIInput.value = settlementROI.toFixed(3);
+            
+            calculateFinalResult();
+        }
+
+        // 计算最终设置
+        function calculateFinalResult() {
+            const settlementROI = parseFloat(settlementROIInput.value) || 0;
+            const orderSettlementRate = parseFloat(orderSettlementRateInput.value) || 0;
+            const refundExemptionRate = parseFloat(refundExemptionRateInput.value) || 0;
+
+            // 转换为小数
+            const osr = orderSettlementRate / 100;
+            const rer = refundExemptionRate / 100;
+
+            // 计算有效结算率
+            const effectiveSettlementRate = osr + (1 - osr) * rer;
+
+            if (effectiveSettlementRate === 0) {
+                finalResultElement.textContent = '0';
+                return;
+            }
+
+            // 计算最终设置
+            const finalResult = (settlementROI * 1.05) / effectiveSettlementRate;
+            
+            // 保留9位小数，与表格一致
+            finalResultElement.textContent = finalResult.toFixed(9);
+        }
+
+        // 绑定事件
+        profitRateRadios.forEach(radio => {
+            radio.addEventListener('change', calculateSettlementROI);
+        });
+
+        breakEvenROIInput.addEventListener('input', calculateSettlementROI);
+        settlementROIInput.addEventListener('input', calculateFinalResult);
+        orderSettlementRateInput.addEventListener('input', calculateFinalResult);
+        refundExemptionRateInput.addEventListener('input', calculateFinalResult);
+
+        // 初始化计算
+        calculateSettlementROI();
+    </script>
+</body>
+</html>
