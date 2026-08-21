@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>黄金成交出价计算器（最终版）</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+        }
+        
+        body {
+            background-color: #f0f2f5;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .calculator-container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 18px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        
+        .header {
+            background-color: #165DFF;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .formula-section {
+            padding: 20px;
+            background-color: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .formula-section h2 {
+            font-size: 18px;
+            color: #1e293b;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+        
+        .formula-item {
+            margin-bottom: 10px;
+            font-size: 16px;
+            color: #334155;
+        }
+        
+        .formula-item strong {
+            color: #165DFF;
+        }
+        
+        .note {
+            margin-top: 15px;
+            font-size: 14px;
+            color: #64748b;
+            padding: 10px;
+            background-color: #eff6ff;
+            border-radius: 6px;
+            border-left: 3px solid #165DFF;
+        }
+        
+        .table-section {
+            padding: 20px;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .data-table th {
+            background-color: #165DFF;
+            color: white;
+            padding: 14px 12px;
+            text-align: center;
+            font-size: 15px;
+            font-weight: 500;
+        }
+        
+        .data-table td {
+            padding: 12px;
+            text-align: center;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 15px;
+            color: #334155;
+        }
+        
+        .data-table tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+        
+        .data-table tr:hover {
+            background-color: #eff6ff;
+            transition: background-color 0.2s ease;
+        }
+        
+        .input-field {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 15px;
+            color: #1e293b;
+            text-align: center;
+            transition: border-color 0.2s ease;
+        }
+        
+        .input-field:focus {
+            outline: none;
+            border-color: #165DFF;
+            box-shadow: 0 0 0 2px rgba(22, 93, 255, 0.1);
+        }
+        
+        .result-cell {
+            color: #165DFF;
+            font-weight: 500;
+            background-color: #f0f7ff;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 20px;
+            padding-bottom: 10px;
+        }
+        
+        .action-btn {
+            padding: 10px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        
+        .add-btn {
+            background-color: #36D399;
+            color: white;
+        }
+        
+        .add-btn:hover {
+            background-color: #2cb67d;
+        }
+        
+        .reset-btn {
+            background-color: #F87272;
+            color: white;
+        }
+        
+        .reset-btn:hover {
+            background-color: #e56565;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 15px;
+            font-size: 14px;
+            color: #64748b;
+            border-top: 1px solid #e2e8f0;
+        }
+        
+        @media (max-width: 768px) {
+            .calculator-container {
+                padding: 0;
+            }
+            
+            .table-section {
+                padding: 10px;
+                overflow-x: auto;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+            
+            .action-btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator-container">
+        <div class="header">
+            <h1>黄金成交出价计算器</h1>
+            <p>自动计算黄金出价与净保本出价，输入即算</p>
+        </div>
+        
+        <div class="formula-section">
+            <h2>计算公式（严格按需求配置）</h2>
+            <div class="formula-item">
+                1. 净保本出价 = (售价 - 成本) × (1 - 退款率)
+            </div>
+            <div class="formula-item">
+                2. 黄金出价 = 售价 × (售价 - 成本) ÷ 售价 × (1 - 退款率) - 0.135 × 售价
+            </div>
+            <div class="note">
+                <strong>输入说明：</strong>退款率请输入小数形式（如20%输入0.2，40%输入0.4）；所有输入值不能为负数；结果自动保留2位小数
+            </div>
+        </div>
+        
+        <div class="table-section">
+            <table class="data-table" id="priceTable">
+                <thead>
+                    <tr>
+                        <th>序号</th>
+                        <th>售价（元）</th>
+                        <th>成本（元）</th>
+                        <th>退款率</th>
+                        <th>净保本出价（元）</th>
+                        <th>黄金出价（元）</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>1</td>
+                        <td><input type="number" step="0.01" min="0" class="input-field price" value="24" oninput="calculateRow(this)"></td>
+                        <td><input type="number" step="0.01" min="0" class="input-field cost" value="10" oninput="calculateRow(this)"></td>
+                        <td><input type="number" step="0.01" min="0" max="1" class="input-field refund" value="0.2" oninput="calculateRow(this)"></td>
+                        <td class="result-cell break-even">0.00</td>
+                        <td class="result-cell gold-price">0.00</td>
+                    </tr>
+                    <tr>
+                        <td>2</td>
+                        <td><input type="number" step="0.01" min="0" class="input-field price" value="10" oninput="calculateRow(this)"></td>
+                        <td><input type="number" step="0.01" min="0" class="input-field cost" value="1" oninput="calculateRow(this)"></td>
+                        <td><input type="number" step="0.01" min="0" max="1" class="input-field refund" value="0.4" oninput="calculateRow(this)"></td>
+                        <td class="result-cell break-even">0.00</td>
+                        <td class="result-cell gold-price">0.00</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <div class="button-group">
+                <button class="action-btn add-btn" onclick="addNewRow()">添加计算行</button>
+                <button class="action-btn reset-btn" onclick="resetTable()">重置表格</button>
+            </div>
+        </div>
+        
+        <div class="footer">
+            计算器版本：最终版 | 使用说明：修改任意输入框内容即可自动重新计算
+        </div>
+    </div>
+
+    <script>
+        // 页面加载完成后初始化计算所有行
+        window.onload = function() {
+            initCalculation();
+        };
+        
+        // 初始化计算
+        function initCalculation() {
+            const allInputs = document.querySelectorAll('.input-field');
+            if (allInputs.length > 0) {
+                calculateRow(allInputs[0]);
+            }
+        }
+        
+        // 计算单行数据（核心计算逻辑）
+        function calculateRow(inputElement) {
+            // 获取当前行元素
+            const row = inputElement.closest('tr');
+            if (!row) return;
+            
+            // 获取输入值（处理空值和负数）
+            const price = parseFloat(row.querySelector('.price').value) || 0;
+            const cost = parseFloat(row.querySelector('.cost').value) || 0;
+            const refundRate = parseFloat(row.querySelector('.refund').value) || 0;
+            
+            // 确保输入值合法
+            const validPrice = Math.max(0, price);
+            const validCost = Math.max(0, cost);
+            const validRefund = Math.max(0, Math.min(1, refundRate)); // 退款率限制在0-1之间
+            
+            // 更新输入框为合法值
+            row.querySelector('.price').value = validPrice;
+            row.querySelector('.cost').value = validCost;
+            row.querySelector('.refund').value = validRefund;
+            
+            // 严格按照用户提供的公式计算
+            // 1. 净保本出价 = (售价 - 成本) × (1 - 退款率)
+            const breakEvenPrice = (validPrice - validCost) * (1 - validRefund);
+            
+            // 2. 黄金出价 = 售价 × (售价 - 成本) ÷ 售价 × (1 - 退款率) - 0.135 × 售价
+            // 处理售价为0的特殊情况
+            let goldPrice = 0;
+            if (validPrice > 0) {
+                goldPrice = validPrice * (validPrice - validCost) / validPrice * (1 - validRefund) - 0.135 * validPrice;
+            }
+            
+            // 确保结果不为负数
+            const finalBreakEven = Math.max(0, breakEvenPrice);
+            const finalGoldPrice = Math.max(0, goldPrice);
+            
+            // 更新结果显示（保留2位小数）
+            row.querySelector('.break-even').textContent = finalBreakEven.toFixed(2);
+            row.querySelector('.gold-price').textContent = finalGoldPrice.toFixed(2);
+        }
+        
+        // 添加新的计算行
+        function addNewRow() {
+            const tbody = document.querySelector('#priceTable tbody');
+            if (!tbody) return;
+            
+            // 获取当前行数
+            const rowCount = tbody.children.length + 1;
+            
+            // 创建新行元素
+            const newRow = document.createElement('tr');
+            newRow.innerHTML = `
+                <td>${rowCount}</td>
+                <td><input type="number" step="0.01" min="0" class="input-field price" value="0" oninput="calculateRow(this)"></td>
+                <td><input type="number" step="0.01" min="0" class="input-field cost" value="0" oninput="calculateRow(this)"></td>
+                <td><input type="number" step="0.01" min="0" max="1" class="input-field refund" value="0" oninput="calculateRow(this)"></td>
+                <td class="result-cell break-even">0.00</td>
+                <td class="result-cell gold-price">0.00</td>
+            `;
+            
+            // 添加到表格中
+            tbody.appendChild(newRow);
+            
+            // 初始化新行的计算
+            const newInput = newRow.querySelector('.price');
+            if (newInput) {
+                newInput.focus();
+                calculateRow(newInput);
+            }
+        }
+        
+        // 重置表格到初始状态
+        function resetTable() {
+            const tbody = document.querySelector('#priceTable tbody');
+            if (!tbody) return;
+            
+            // 清空现有内容
+            tbody.innerHTML = '';
+            
+            // 添加初始的2行数据
+            const initialRows = `
+                <tr>
+                    <td>1</td>
+                    <td><input type="number" step="0.01" min="0" class="input-field price" value="24" oninput="calculateRow(this)"></td>
+                    <td><input type="number" step="0.01" min="0" class="input-field cost" value="10" oninput="calculateRow(this)"></td>
+                    <td><input type="number" step="0.01" min="0" max="1" class="input-field refund" value="0.2" oninput="calculateRow(this)"></td>
+                    <td class="result-cell break-even">0.00</td>
+                    <td class="result-cell gold-price">0.00</td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td><input type="number" step="0.01" min="0" class="input-field price" value="10" oninput="calculateRow(this)"></td>
+                    <td><input type="number" step="0.01" min="0" class="input-field cost" value="1" oninput="calculateRow(this)"></td>
+                    <td><input type="number" step="0.01" min="0" max="1" class="input-field refund" value="0.4" oninput="calculateRow(this)"></td>
+                    <td class="result-cell break-even">0.00</td>
+                    <td class="result-cell gold-price">0.00</td>
+                </tr>
+            `;
+            
+            tbody.innerHTML = initialRows;
+            
+            // 重新初始化计算
+            initCalculation();
+        }
+    </script>
+</body>
+</html>
