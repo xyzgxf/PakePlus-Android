@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>拼多多最佳投产计算工具</title>
+    <!-- 引入Excel导出依赖库 -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft YaHei", sans-serif;
+        }
+        body {
+            background-color: #f5f7fa;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            position: relative;
+        }
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+        }
+        h1 {
+            text-align: center;
+            color: #e4393c;
+            margin-bottom: 10px;
+            font-size: 24px;
+        }
+        /* 作者微信 - 右下角悬浮定位 */
+        .author {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            color: #666;
+            font-size: 14px;
+            background: rgba(255,255,255,0.9);
+            padding: 8px 12px;
+            border-radius: 4px;
+            box-shadow: 0 1px 5px rgba(0,0,0,0.1);
+            z-index: 999;
+        }
+        .author span {
+            color: #e4393c;
+            font-weight: bold;
+        }
+        .calc-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            overflow-x: auto;
+            display: block;
+        }
+        .calc-table thead tr {
+            background-color: #f0f2f5;
+        }
+        .calc-table th, .calc-table td {
+            border: 1px solid #e8e8e8;
+            padding: 12px 8px;
+            text-align: center;
+            min-width: 120px;
+            white-space: nowrap;
+        }
+        .calc-table th {
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+        }
+        .calc-table td input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #dcdfe6;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .calc-table td input:focus {
+            border-color: #e4393c;
+        }
+        .calc-table td input:read-only {
+            background-color: #f5f7fa;
+            cursor: default;
+            border-color: #e8e8e8;
+        }
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 10px 30px;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .btn-primary {
+            background-color: #e4393c;
+            color: #fff;
+        }
+        .btn-primary:hover {
+            background-color: #c41f22;
+        }
+        .btn-default {
+            background-color: #f0f2f5;
+            color: #606266;
+        }
+        .btn-default:hover {
+            background-color: #e4e7ed;
+        }
+        .btn-success {
+            background-color: #00b42a;
+            color: #fff;
+        }
+        .btn-success:hover {
+            background-color: #009a25;
+        }
+        .btn-danger {
+            background-color: #ff7d00;
+            color: #fff;
+        }
+        .btn-danger:hover {
+            background-color: #e67000;
+        }
+        .btn-excel {
+            background-color: #1677ff;
+            color: #fff;
+        }
+        .btn-excel:hover {
+            background-color: #0958d9;
+        }
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            h1 {
+                font-size: 20px;
+            }
+            .author {
+                font-size: 12px;
+                padding: 6px 8px;
+                bottom: 10px;
+                right: 10px;
+            }
+            .calc-table th, .calc-table td {
+                padding: 8px 4px;
+                font-size: 12px;
+                min-width: 80px;
+            }
+            .btn {
+                padding: 8px 20px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>拼多多最佳投产计算工具</h1>
+        <table class="calc-table" id="calcTable">
+            <thead>
+                <tr>
+                    <th>SKU名称</th>
+                    <th>货物成本（元）</th>
+                    <th>快递费（元）</th>
+                    <th>运费险（元）</th>
+                    <th>退款率（%）</th>
+                    <th>售卖价（元）</th>
+                    <th>利润（元）</th>
+                    <th>前期投产</th>
+                    <th>净投产</th>
+                    <th>最佳投产</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                <tr>
+                    <td><input type="text" class="skuName" placeholder="输入SKU/商品名"></td>
+                    <td><input type="number" class="costGoods" placeholder="输入成本" step="0.01"></td>
+                    <td><input type="number" class="costExpress" placeholder="输入快递费" step="0.01"></td>
+                    <td><input type="number" class="costInsurance" placeholder="输入运费险" step="0.01"></td>
+                    <td><input type="number" class="refundRate" placeholder="退款率" value="20" step="0.01"></td>
+                    <td><input type="number" class="price" placeholder="输入售卖价" step="0.01"></td>
+                    <td><input type="text" class="profit" readonly value="0.00"></td>
+                    <td><input type="text" class="preRoi" readonly value="0.00"></td>
+                    <td><input type="text" class="netRoi" readonly value="0.00"></td>
+                    <td><input type="text" class="bestRoi" readonly value="0.00"></td>
+                </tr>
+            </tbody>
+        </table>
+        <div class="btn-group">
+            <button class="btn btn-success" id="addRowBtn">新增行</button>
+            <button class="btn btn-danger" id="delRowBtn">删除行</button>
+            <button class="btn btn-primary" id="calcBtn">立即计算</button>
+            <button class="btn btn-excel" id="exportExcelBtn">导出Excel</button>
+            <button class="btn btn-default" id="resetBtn">重置</button>
+        </div>
+    </div>
+
+    <!-- 作者微信悬浮在右下角 -->
+    <p class="author">作者微信：<span>txp80290335</span></p>
+
+    <script>
+        const tableBody = document.getElementById('tableBody');
+        const addRowBtn = document.getElementById('addRowBtn');
+        const delRowBtn = document.getElementById('delRowBtn');
+        const calcBtn = document.getElementById('calcBtn');
+        const exportExcelBtn = document.getElementById('exportExcelBtn');
+        const resetBtn = document.getElementById('resetBtn');
+
+        // 格式化数字
+        const formatNumber = (num) => {
+            if (num === Infinity) return '∞';
+            if (isNaN(num)) return '0.00';
+            return num.toFixed(2);
+        };
+
+        // 计算单行数据
+        function calculateRow(row) {
+            const costGoods = parseFloat(row.querySelector('.costGoods').value) || 0;
+            const costExpress = parseFloat(row.querySelector('.costExpress').value) || 0;
+            const costInsurance = parseFloat(row.querySelector('.costInsurance').value) || 0;
+            const refundRatePercent = parseFloat(row.querySelector('.refundRate').value) || 0;
+            const price = parseFloat(row.querySelector('.price').value) || 0;
+
+            const refundRate = refundRatePercent / 100;
+            const signRate = 1 - refundRate;
+
+            // 核心公式
+            const profit = price - costGoods - costExpress - costInsurance;
+            
+            let preRoi = 0;
+            if (profit > 0) preRoi = price / profit;
+            else if (profit === 0) preRoi = Infinity;
+
+            let netRoi = 0;
+            if (preRoi !== 0 && signRate > 0) netRoi = preRoi / signRate;
+            else if (preRoi === Infinity) netRoi = Infinity;
+
+            let bestRoi = 0;
+            if (netRoi !== 0 && netRoi !== Infinity) bestRoi = netRoi * 1.3;
+            else if (netRoi === Infinity) bestRoi = Infinity;
+
+            // 赋值
+            row.querySelector('.profit').value = formatNumber(profit);
+            row.querySelector('.preRoi').value = formatNumber(preRoi);
+            row.querySelector('.netRoi').value = formatNumber(netRoi);
+            row.querySelector('.bestRoi').value = formatNumber(bestRoi);
+        }
+
+        // 计算所有行
+        function calculateAll() {
+            const rows = tableBody.querySelectorAll('tr');
+            rows.forEach(row => calculateRow(row));
+        }
+
+        // 新增行
+        function addRow() {
+            const rows = tableBody.querySelectorAll('tr');
+            const newRow = rows[0].cloneNode(true);
+            
+            // 重置新行数据
+            const inputs = newRow.querySelectorAll('input');
+            inputs.forEach(input => {
+                if (input.classList.contains('refundRate')) {
+                    input.value = '20';
+                } else if (input.readOnly) {
+                    input.value = '0.00';
+                } else {
+                    input.value = '';
+                }
+            });
+
+            tableBody.appendChild(newRow);
+            // 绑定新行事件
+            bindRowEvents(newRow);
+        }
+
+        // 删除行（至少保留1行）
+        function delRow() {
+            const rows = tableBody.querySelectorAll('tr');
+            if (rows.length > 1) {
+                rows[rows.length - 1].remove();
+            }
+        }
+
+        // 绑定行输入事件
+        function bindRowEvents(row) {
+            const inputs = row.querySelectorAll('input[type="number"], input[type="text"]');
+            inputs.forEach(input => {
+                input.addEventListener('input', () => calculateRow(row));
+            });
+        }
+
+        // 重置所有
+        function resetAll() {
+            const rows = tableBody.querySelectorAll('tr');
+            rows.forEach(row => {
+                const inputs = row.querySelectorAll('input');
+                inputs.forEach(input => {
+                    if (input.classList.contains('refundRate')) {
+                        input.value = '20';
+                    } else if (input.readOnly) {
+                        input.value = '0.00';
+                    } else {
+                        input.value = '';
+                    }
+                });
+            });
+        }
+
+        // 修复导出Excel函数（读取输入框内容，解决空白问题）
+        function exportToExcel() {
+            // 1. 定义表头
+            const headers = [
+                "SKU名称", "货物成本（元）", "快递费（元）", "运费险（元）", 
+                "退款率（%）", "售卖价（元）", "利润（元）", 
+                "前期投产", "净投产", "最佳投产"
+            ];
+            
+            // 2. 采集所有行数据
+            const data = [headers];
+            const rows = tableBody.querySelectorAll('tr');
+            
+            rows.forEach(row => {
+                const rowData = [
+                    row.querySelector('.skuName').value || '',
+                    row.querySelector('.costGoods').value || '0.00',
+                    row.querySelector('.costExpress').value || '0.00',
+                    row.querySelector('.costInsurance').value || '0.00',
+                    row.querySelector('.refundRate').value || '20',
+                    row.querySelector('.price').value || '0.00',
+                    row.querySelector('.profit').value || '0.00',
+                    row.querySelector('.preRoi').value || '0.00',
+                    row.querySelector('.netRoi').value || '0.00',
+                    row.querySelector('.bestRoi').value || '0.00'
+                ];
+                data.push(rowData);
+            });
+
+            // 3. 创建工作簿并导出
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            XLSX.utils.book_append_sheet(wb, ws, "投产计算数据");
+            XLSX.writeFile(wb, `拼多多投产计算_${new Date().toLocaleDateString()}.xlsx`);
+        }
+
+        // 初始化绑定事件
+        bindRowEvents(tableBody.querySelector('tr'));
+
+        // 按钮事件
+        addRowBtn.addEventListener('click', addRow);
+        delRowBtn.addEventListener('click', delRow);
+        calcBtn.addEventListener('click', calculateAll);
+        exportExcelBtn.addEventListener('click', exportToExcel);
+        resetBtn.addEventListener('click', resetAll);
+
+        // 页面加载初始化
+        window.onload = resetAll;
+    </script>
+</body>
+</html>
