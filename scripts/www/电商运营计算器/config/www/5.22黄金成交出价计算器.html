@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>拼多多黄金成交出价计算器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft YaHei", sans-serif;
+        }
+        body {
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: relative;
+            padding-bottom: 60px;
+        }
+        h1 {
+            text-align: center;
+            color: #d32f2f;
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: center;
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #333;
+            padding: 12px;
+        }
+        .section-title {
+            background-color: white;
+            color: #d32f2f;
+            font-size: 24px;
+            font-weight: bold;
+            padding: 15px;
+        }
+        .input-header {
+            background-color: #4a89dc;
+            color: white;
+            font-weight: bold;
+        }
+        .gold-header {
+            background-color: #ffeb3b;
+            color: #d32f2f;
+            font-weight: bold;
+        }
+        .break-header {
+            background-color: #4a89dc;
+            color: white;
+            font-weight: bold;
+        }
+        .delete-header {
+            background-color: #f44336;
+            color: white;
+            font-weight: bold;
+            width: 80px;
+        }
+        input {
+            width: 100%;
+            border: none;
+            background: transparent;
+            text-align: center;
+            font-size: 18px;
+            outline: none;
+        }
+        .result {
+            font-weight: bold;
+            font-size: 20px;
+        }
+        .gold-result {
+            background-color: #ffeb3b;
+            color: #d32f2f;
+        }
+        .break-result {
+            background-color: #e3f2fd;
+            color: #1976d2;
+        }
+        .delete-btn {
+            background-color: #f44336;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .delete-btn:hover {
+            background-color: #d32f2f;
+        }
+        .add-btn {
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+        .add-btn:hover {
+            background-color: #388e3c;
+        }
+        .note {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.6;
+        }
+        .author {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            font-size: 14px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>拼多多黄金成交出价计算器</h1>
+        
+        <button class="add-btn" onclick="addRow()">+ 新增一行</button>
+        
+        <table id="calculatorTable">
+            <tr>
+                <td colspan="4" class="section-title">手动输入</td>
+                <td colspan="2" class="section-title">自动计算</td>
+                <td class="section-title" style="width: 80px;"></td>
+            </tr>
+            <tr>
+                <th class="input-header">售价</th>
+                <th class="input-header">成本</th>
+                <th class="input-header">订单结算率</th>
+                <th class="input-header">退单豁免率</th>
+                <th class="gold-header">黄金出价</th>
+                <th class="break-header">净保本出价</th>
+                <th class="delete-header">操作</th>
+            </tr>
+            <tr class="data-row">
+                <td><input type="number" class="price" step="0.01" placeholder="输入售价" oninput="calculateRow(this)"></td>
+                <td><input type="number" class="cost" step="0.01" placeholder="输入成本" oninput="calculateRow(this)"></td>
+                <td><input type="number" class="settlementRate" step="0.01" placeholder="输入百分比" oninput="calculateRow(this)"> %</td>
+                <td><input type="number" class="refundExemptionRate" step="0.01" placeholder="输入百分比" oninput="calculateRow(this)"> %</td>
+                <td class="gold-result result goldBid">0.00</td>
+                <td class="break-result result breakEvenBid">0.00</td>
+                <td><button class="delete-btn" onclick="deleteRow(this)">删除</button></td>
+            </tr>
+        </table>
+        
+        <div class="note">
+            <p><strong>使用说明：</strong></p>
+            <p>1. 在手动输入区域输入您的商品售价、成本、订单结算率和退单豁免率</p>
+            <p>2. 系统会自动计算出黄金出价和净保本出价，结果保留两位小数</p>
+            <p>3. 黄金出价是平台推荐的最优成交出价，约为净保本出价的74.07%</p>
+            <p>4. 净保本出价是您能承受的最高出价，超过此价格将出现亏损</p>
+            <p>5. 点击"新增一行"可以同时计算多个商品的出价</p>
+        </div>
+        
+        <div class="author">作者v: txp80290335</div>
+    </div>
+
+    <script>
+        // 计算单行数据
+        function calculateRow(inputElement) {
+            const row = inputElement.closest('.data-row');
+            
+            // 获取输入值
+            const price = parseFloat(row.querySelector('.price').value) || 0;
+            const cost = parseFloat(row.querySelector('.cost').value) || 0;
+            const settlementRatePercent = parseFloat(row.querySelector('.settlementRate').value) || 0;
+            const refundExemptionRatePercent = parseFloat(row.querySelector('.refundExemptionRate').value) || 0;
+
+            // 转换为小数
+            const settlementRate = settlementRatePercent / 100;
+            const refundExemptionRate = refundExemptionRatePercent / 100;
+
+            // 计算利润空间
+            const profitMargin = price - cost;
+
+            // 计算有效系数
+            const effectiveCoefficient = settlementRate + (1 - settlementRate) * refundExemptionRate;
+
+            // 计算净保本出价
+            const breakEvenBid = profitMargin * effectiveCoefficient;
+
+            // 计算黄金出价 (20/27 ≈ 0.7407407)
+            const goldBid = breakEvenBid * (20 / 27);
+
+            // 显示结果，保留两位小数
+            row.querySelector('.goldBid').textContent = goldBid.toFixed(2);
+            row.querySelector('.breakEvenBid').textContent = breakEvenBid.toFixed(2);
+        }
+
+        // 新增一行
+        function addRow() {
+            const table = document.getElementById('calculatorTable');
+            const templateRow = table.querySelector('.data-row');
+            const newRow = templateRow.cloneNode(true);
+            
+            // 清空新行的输入值和结果
+            newRow.querySelectorAll('input').forEach(input => input.value = '');
+            newRow.querySelector('.goldBid').textContent = '0.00';
+            newRow.querySelector('.breakEvenBid').textContent = '0.00';
+            
+            // 添加到表格中
+            table.appendChild(newRow);
+        }
+
+        // 删除一行
+        function deleteRow(buttonElement) {
+            const row = buttonElement.closest('.data-row');
+            const table = document.getElementById('calculatorTable');
+            
+            // 确保至少保留一行
+            if (table.querySelectorAll('.data-row').length > 1) {
+                row.remove();
+            } else {
+                alert('至少需要保留一行数据');
+            }
+        }
+    </script>
+</body>
+</html>
